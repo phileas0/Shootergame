@@ -6,7 +6,7 @@ public class ShootergameEditorTarget : TargetRules
 	public ShootergameEditorTarget(TargetInfo Target) : base(Target)
 	{
 		Type = TargetType.Editor;
-		DefaultBuildSettings = BuildSettingsVersion.V5;
+		DefaultBuildSettings = BuildSettingsVersion.V6;
 		IncludeOrderVersion = EngineIncludeOrderVersion.Latest;
 		bOverrideBuildEnvironment = true;
 		ExtraModuleNames.Add("Shootergame");
