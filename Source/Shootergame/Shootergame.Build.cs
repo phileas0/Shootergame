@@ -12,12 +12,12 @@ public class Shootergame : ModuleRules
             "CoreUObject",
             "Engine",
             "InputCore",
+            "EnhancedInput",      // Für IA_Shoot und Enhanced Input Actions im Blueprint
         });
 
         PrivateDependencyModuleNames.AddRange(new string[]
         {
-            // File I/O for CSV logging
-            "ApplicationCore",
+            "ApplicationCore",    // Platform-Utilities
         });
     }
 }
