@@ -1,0 +1,3 @@
+Modell,CV ROC-AUC,Test ROC-AUC,Avg. Precision,Opt. Threshold τ,Kosten (τ=0.5),Kosten (opt. τ)
+Logistic Regression,0.9996 ±0.0008,1.0000,1.0000,0.4,0,0
+Random Forest,1.0000 ±0.0000,1.0000,1.0000,0.2,10,0

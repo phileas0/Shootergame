@@ -4,26 +4,34 @@
 #include "Kismet/GameplayStatics.h"
 #include "Math/UnrealMathUtility.h"
 #include "Algo/MaxElement.h"
+#include "DrawDebugHelpers.h"
+#include "Engine/World.h"
 
 UTelemetryCollector::UTelemetryCollector()
 {
     PrimaryComponentTick.bCanEverTick = true;
-    PrimaryComponentTick.TickInterval = 0.1f; // Sample every 100ms by default
+    PrimaryComponentTick.TickInterval = 0.1f;
 
-    MaxLegalSpeed    = 600.f;   // cm/s — adjust to match BP_ShooterCharacter max walk speed
-    SamplingInterval = 0.1f;
+    MaxLegalSpeed       = 600.f;
+    SamplingInterval    = 0.1f;
+    EnemyCheckInterval  = 0.2f;
+    EnemyCheckDistance  = 5000.f;
+
+    // Default headshot bone names — covers most UE5 humanoid skeletons
+    HeadshotBoneNames = { TEXT("head"), TEXT("Head"), TEXT("HEAD"), TEXT("neck_01"), TEXT("neck_02") };
 
     PlayerID  = TEXT("Unknown");
     Label     = 0;
 
-    SessionStartTime       = 0.f;
-    LastSampleTime         = 0.f;
-    EnemyVisibleTimestamp  = 0.f;
+    SessionStartTime        = 0.f;
+    LastSampleTime          = 0.f;
+    EnemyVisibleTimestamp   = 0.f;
     bWaitingForReactionShot = false;
-    LastShotTimestamp      = -1.f;
-    AimFlipCount           = 0;
-    DirectionChangeCount   = 0;
-    SpeedViolationCount    = 0;
+    LastShotTimestamp       = -1.f;
+    LastEnemyCheckTime      = 0.f;
+    AimFlipCount            = 0;
+    DirectionChangeCount    = 0;
+    SpeedViolationCount     = 0;
 
     TotalShots     = 0;
     TotalHits      = 0;
@@ -36,24 +44,30 @@ void UTelemetryCollector::BeginPlay()
 {
     Super::BeginPlay();
 
-    // Only collect data on the server (authoritative)
     if (GetOwner() && GetOwner()->HasAuthority())
     {
-        SessionStartTime = UGameplayStatics::GetTimeSeconds(GetWorld());
-        LastSampleTime   = SessionStartTime;
+        SessionStartTime   = UGameplayStatics::GetTimeSeconds(GetWorld());
+        LastSampleTime     = SessionStartTime;
+        LastEnemyCheckTime = SessionStartTime;
 
-        // Initialize view direction
         if (ACharacter* Owner = Cast<ACharacter>(GetOwner()))
         {
             LastViewDirection = Owner->GetActorForwardVector();
             LastMoveDirection = Owner->GetActorForwardVector();
+
+            // AnyDamage Delegate direkt hier binden — Pawn ist garantiert gespawnt
+            // Wird aufgerufen wenn dieser Charakter Schaden bekommt
+            // Wir nutzen es um RecordHit auf dem Schützen (Instigator) aufzurufen
+            if (!Owner->OnTakeAnyDamage.IsAlreadyBound(this, &UTelemetryCollector::OnOwnerTakeAnyDamage))
+            {
+                Owner->OnTakeAnyDamage.AddDynamic(this, &UTelemetryCollector::OnOwnerTakeAnyDamage);
+            }
         }
 
         UE_LOG(LogTemp, Log, TEXT("[TelemetryCollector] Session started for %s"), *PlayerID);
     }
     else
     {
-        // Disable ticking on clients — server only
         PrimaryComponentTick.bCanEverTick = false;
     }
 }
@@ -76,16 +90,13 @@ void UTelemetryCollector::TickComponent(float DeltaTime, ELevelTick TickType,
         FMath::Clamp(FVector::DotProduct(LastViewDirection, CurrentViewDir), -1.f, 1.f)
     );
     float AngleDeltaDeg = FMath::RadiansToDegrees(AngleDelta);
-
-    float AngularSpeed = AngleDeltaDeg / FMath::Max(DeltaTime, KINDA_SMALL_NUMBER);
+    float AngularSpeed  = AngleDeltaDeg / FMath::Max(DeltaTime, KINDA_SMALL_NUMBER);
     AimAngularSpeeds.Add(AngularSpeed);
 
-    // Detect abrupt flips (>90 degrees in one tick)
     if (AngleDeltaDeg > 90.f)
     {
         AimFlipCount++;
     }
-
     LastViewDirection = CurrentViewDir;
 
     // ---- Movement sampling ----
@@ -95,13 +106,11 @@ void UTelemetryCollector::TickComponent(float DeltaTime, ELevelTick TickType,
         float Speed = Movement->Velocity.Size();
         MovementSpeeds.Add(Speed);
 
-        // Speed violation check
-        if (Speed > MaxLegalSpeed + 10.f) // 10 cm/s tolerance
+        if (Speed > MaxLegalSpeed + 10.f)
         {
             SpeedViolationCount++;
         }
 
-        // Direction change detection
         FVector CurrentMoveDir = Movement->Velocity;
         if (CurrentMoveDir.SizeSquared() > 1.f)
         {
@@ -114,12 +123,17 @@ void UTelemetryCollector::TickComponent(float DeltaTime, ELevelTick TickType,
                 DirectionChangeCount++;
             }
 
-            // Record heading angle for path entropy
             float HeadingAngle = FMath::Atan2(CurrentMoveDir.Y, CurrentMoveDir.X);
-            MovementAngles.Add(FMath::RadiansToDegrees(HeadingAngle) + 180.f); // shift to 0-360
-
+            MovementAngles.Add(FMath::RadiansToDegrees(HeadingAngle) + 180.f);
             LastMoveDirection = CurrentMoveDir;
         }
+    }
+
+    // ---- Enemy Line of Sight check (every EnemyCheckInterval seconds) ----
+    if (Now - LastEnemyCheckTime >= EnemyCheckInterval)
+    {
+        CheckEnemyLineOfSight();
+        LastEnemyCheckTime = Now;
     }
 
     LastSampleTime = Now;
@@ -130,14 +144,12 @@ void UTelemetryCollector::RecordShot()
     float Now = UGameplayStatics::GetTimeSeconds(GetWorld());
     TotalShots++;
 
-    // Shot interval
     if (LastShotTimestamp > 0.f)
     {
         ShotIntervals.Add(Now - LastShotTimestamp);
     }
     LastShotTimestamp = Now;
 
-    // Reaction time: was this the first shot after an enemy became visible?
     if (bWaitingForReactionShot)
     {
         RecordFirstShotAfterVisible();
@@ -148,6 +160,16 @@ void UTelemetryCollector::RecordHit(bool bIsHeadshot)
 {
     TotalHits++;
     if (bIsHeadshot) TotalHeadshots++;
+}
+
+void UTelemetryCollector::RecordHitWithBone(FName HitBoneName)
+{
+    TotalHits++;
+    if (IsHeadshotBone(HitBoneName))
+    {
+        TotalHeadshots++;
+        UE_LOG(LogTemp, Log, TEXT("[TelemetryCollector] Headshot! Bone: %s"), *HitBoneName.ToString());
+    }
 }
 
 void UTelemetryCollector::RecordKill()
@@ -162,8 +184,12 @@ void UTelemetryCollector::RecordDeath()
 
 void UTelemetryCollector::RecordEnemyVisible()
 {
-    EnemyVisibleTimestamp  = UGameplayStatics::GetTimeSeconds(GetWorld());
-    bWaitingForReactionShot = true;
+    // Only start a new reaction timer if we're not already waiting for a shot
+    if (!bWaitingForReactionShot)
+    {
+        EnemyVisibleTimestamp   = UGameplayStatics::GetTimeSeconds(GetWorld());
+        bWaitingForReactionShot = true;
+    }
 }
 
 void UTelemetryCollector::RecordFirstShotAfterVisible()
@@ -171,7 +197,6 @@ void UTelemetryCollector::RecordFirstShotAfterVisible()
     if (!bWaitingForReactionShot) return;
 
     float ReactionTime = UGameplayStatics::GetTimeSeconds(GetWorld()) - EnemyVisibleTimestamp;
-    // Cap at 5 seconds — anything longer is not a reaction to that enemy sighting
     if (ReactionTime <= 5.f && ReactionTime >= 0.f)
     {
         ReactionTimes.Add(ReactionTime);
@@ -193,7 +218,7 @@ void UTelemetryCollector::FinalizeSession(UTelemetryLogger* Logger)
 {
     if (!Logger) return;
 
-    float Now            = UGameplayStatics::GetTimeSeconds(GetWorld());
+    float Now             = UGameplayStatics::GetTimeSeconds(GetWorld());
     float SessionDuration = Now - SessionStartTime;
 
     if (SessionDuration < 1.f)
@@ -203,59 +228,54 @@ void UTelemetryCollector::FinalizeSession(UTelemetryLogger* Logger)
     }
 
     FPlayerSessionData Data;
-    Data.PlayerID              = PlayerID;
-    Data.Label                 = Label;
+    Data.PlayerID               = PlayerID;
+    Data.Label                  = Label;
     Data.SessionDurationSeconds = SessionDuration;
 
     // ---- Aim Features ----
-    float AimSpeedMean = ComputeMean(AimAngularSpeeds);
-    Data.AimAngularSpeedMean   = AimSpeedMean;
-    Data.AimAngularSpeedStdDev = ComputeStdDev(AimAngularSpeeds, AimSpeedMean);
+    float AimSpeedMean          = ComputeMean(AimAngularSpeeds);
+    Data.AimAngularSpeedMean    = AimSpeedMean;
+    Data.AimAngularSpeedStdDev  = ComputeStdDev(AimAngularSpeeds, AimSpeedMean);
 
-    float AimErrMean = ComputeMean(AimAngularErrors);
-    Data.AimAngularErrorMean   = AimErrMean;
-    Data.AimAngularErrorStdDev = ComputeStdDev(AimAngularErrors, AimErrMean);
+    float AimErrMean            = ComputeMean(AimAngularErrors);
+    Data.AimAngularErrorMean    = AimErrMean;
+    Data.AimAngularErrorStdDev  = ComputeStdDev(AimAngularErrors, AimErrMean);
 
-    int32 TotalSamples = FMath::Max(AimAngularSpeeds.Num(), 1);
-    Data.AimFlipRatio  = (float)AimFlipCount / (float)TotalSamples;
+    int32 TotalSamples          = FMath::Max(AimAngularSpeeds.Num(), 1);
+    Data.AimFlipRatio           = (float)AimFlipCount / (float)TotalSamples;
 
     // ---- Movement Features ----
-    float SpeedMean = ComputeMean(MovementSpeeds);
-    Data.MovementSpeedMean = SpeedMean;
-    Data.MovementSpeedMax  = MovementSpeeds.Num() > 0
-                             ? *Algo::MaxElement(MovementSpeeds)
-                             : 0.f;
+    float SpeedMean             = ComputeMean(MovementSpeeds);
+    Data.MovementSpeedMean      = SpeedMean;
+    Data.MovementSpeedMax       = MovementSpeeds.Num() > 0
+                                  ? *Algo::MaxElement(MovementSpeeds) : 0.f;
 
     Data.DirectionChangesPerSecond = SessionDuration > 0.f
-                                     ? (float)DirectionChangeCount / SessionDuration
-                                     : 0.f;
+                                     ? (float)DirectionChangeCount / SessionDuration : 0.f;
 
-    int32 MovSamples = FMath::Max(MovementSpeeds.Num(), 1);
-    Data.SpeedViolationRatio  = (float)SpeedViolationCount / (float)MovSamples;
-    Data.MovementPathEntropy  = ComputeEntropy(MovementAngles, 8);
+    int32 MovSamples            = FMath::Max(MovementSpeeds.Num(), 1);
+    Data.SpeedViolationRatio    = (float)SpeedViolationCount / (float)MovSamples;
+    Data.MovementPathEntropy    = ComputeEntropy(MovementAngles, 8);
 
     // ---- Timing Features ----
-    float RTMean = ComputeMean(ReactionTimes);
-    Data.ReactionTimeMean   = RTMean;
-    Data.ReactionTimeStdDev = ComputeStdDev(ReactionTimes, RTMean);
+    float RTMean                = ComputeMean(ReactionTimes);
+    Data.ReactionTimeMean       = RTMean;
+    Data.ReactionTimeStdDev     = ComputeStdDev(ReactionTimes, RTMean);
 
-    float SIMean = ComputeMean(ShotIntervals);
-    Data.ShotIntervalMean   = SIMean;
-    Data.ShotIntervalStdDev = ComputeStdDev(ShotIntervals, SIMean);
+    float SIMean                = ComputeMean(ShotIntervals);
+    Data.ShotIntervalMean       = SIMean;
+    Data.ShotIntervalStdDev     = ComputeStdDev(ShotIntervals, SIMean);
 
-    Data.ShotsPerSecond = SessionDuration > 0.f
-                          ? (float)TotalShots / SessionDuration
-                          : 0.f;
+    Data.ShotsPerSecond         = SessionDuration > 0.f
+                                  ? (float)TotalShots / SessionDuration : 0.f;
 
     // ---- Rate Features ----
-    Data.HitRate       = TotalShots > 0 ? (float)TotalHits / (float)TotalShots : 0.f;
-    Data.HeadshotRate  = TotalHits > 0  ? (float)TotalHeadshots / (float)TotalHits : 0.f;
+    Data.HitRate        = TotalShots > 0 ? (float)TotalHits / (float)TotalShots : 0.f;
+    Data.HeadshotRate   = TotalHits  > 0 ? (float)TotalHeadshots / (float)TotalHits : 0.f;
     Data.KillsPerMinute = SessionDuration > 0.f
-                          ? (float)TotalKills / (SessionDuration / 60.f)
-                          : 0.f;
+                          ? (float)TotalKills / (SessionDuration / 60.f) : 0.f;
     Data.KillDeathRatio = TotalDeaths > 0
-                          ? (float)TotalKills / (float)TotalDeaths
-                          : (float)TotalKills;
+                          ? (float)TotalKills / (float)TotalDeaths : (float)TotalKills;
 
     Data.TotalShots  = TotalShots;
     Data.TotalHits   = TotalHits;
@@ -264,11 +284,90 @@ void UTelemetryCollector::FinalizeSession(UTelemetryLogger* Logger)
 
     Logger->LogSessionData(Data);
 
-    UE_LOG(LogTemp, Log, TEXT("[TelemetryCollector] Session finalized for %s: %.1fs, %d shots, %d kills"),
-           *PlayerID, SessionDuration, TotalShots, TotalKills);
+    UE_LOG(LogTemp, Log,
+        TEXT("[TelemetryCollector] Session finalized for %s: %.1fs, %d shots, %d kills, %d headshots, %d reaction samples"),
+        *PlayerID, SessionDuration, TotalShots, TotalKills, TotalHeadshots, ReactionTimes.Num());
 }
 
 // ---- Private Helpers ----
+
+void UTelemetryCollector::OnOwnerTakeAnyDamage(AActor* DamagedActor, float Damage,
+                                                const UDamageType* DamageType,
+                                                AController* InstigatedBy, AActor* DamageCauser)
+{
+    // Nur tracken wenn jemand anderes den Schaden verursacht hat
+    if (!InstigatedBy || Damage <= 0.f) return;
+
+    APawn* InstigatorPawn = InstigatedBy->GetPawn();
+    if (!InstigatorPawn) return;
+
+    // Nicht sich selbst treffen
+    if (InstigatorPawn == GetOwner()) return;
+
+    // RecordHit direkt auf diesem Collector aufrufen —
+    // dieser Collector gehört dem Opfer, aber wir wollen den Schützen tracken.
+    // Deshalb: den TelemetryCollector des Schützen (Instigator) suchen und dort RecordHit aufrufen.
+    // Falls der Schütze ein Spieler ist → hat TelemetryCollector
+    // Falls der Schütze ein NPC ist → hat keinen TelemetryCollector → ignorieren
+    UTelemetryCollector* ShooterCollector =
+        InstigatorPawn->FindComponentByClass<UTelemetryCollector>();
+    if (ShooterCollector)
+    {
+        ShooterCollector->RecordHit(false);
+        UE_LOG(LogTemp, Log, TEXT("[TelemetryCollector] RecordHit für Schütze: %s → Opfer: %s"),
+            *InstigatorPawn->GetName(), *DamagedActor->GetName());
+    }
+}
+
+// HINWEIS: Dieser Callback läuft auf dem OPFER wenn es Schaden bekommt.
+// Der Schütze (Instigator) ist der Spieler — wir suchen seinen TelemetryCollector.
+// NPCs haben keinen TelemetryCollector → ihre Treffer werden hier nicht gezählt.
+// Für NPC-Hits auf Spieler: der Spieler ist das Opfer, NPC ist Instigator → kein Collector → korrekt ignoriert.
+
+void UTelemetryCollector::CheckEnemyLineOfSight()
+{
+    ACharacter* Owner = Cast<ACharacter>(GetOwner());
+    if (!Owner) return;
+
+    UWorld* World = GetWorld();
+    if (!World) return;
+
+    // Start from camera / eye location
+    FVector StartLocation = Owner->GetPawnViewLocation();
+    FVector EndLocation   = StartLocation + Owner->GetBaseAimRotation().Vector() * EnemyCheckDistance;
+
+    FHitResult HitResult;
+    FCollisionQueryParams Params;
+    Params.AddIgnoredActor(Owner);
+
+    bool bHit = World->LineTraceSingleByChannel(
+        HitResult,
+        StartLocation,
+        EndLocation,
+        ECC_Pawn,
+        Params
+    );
+
+    if (bHit && HitResult.GetActor())
+    {
+        // Check if the hit actor is an NPC/enemy (not the player themselves)
+        // We check for a Character that is NOT the owner
+        ACharacter* HitCharacter = Cast<ACharacter>(HitResult.GetActor());
+        if (HitCharacter && HitCharacter != Owner)
+        {
+            RecordEnemyVisible();
+        }
+    }
+}
+
+bool UTelemetryCollector::IsHeadshotBone(FName BoneName) const
+{
+    for (const FName& HeadBone : HeadshotBoneNames)
+    {
+        if (BoneName == HeadBone) return true;
+    }
+    return false;
+}
 
 float UTelemetryCollector::ComputeMean(const TArray<float>& Values) const
 {
@@ -290,7 +389,6 @@ float UTelemetryCollector::ComputeEntropy(const TArray<float>& Values, int32 Num
 {
     if (Values.Num() == 0) return 0.f;
 
-    // Find range
     float MinVal = Values[0], MaxVal = Values[0];
     for (float V : Values)
     {
@@ -299,9 +397,8 @@ float UTelemetryCollector::ComputeEntropy(const TArray<float>& Values, int32 Num
     }
 
     float Range = MaxVal - MinVal;
-    if (Range < KINDA_SMALL_NUMBER) return 0.f; // all same value = zero entropy
+    if (Range < KINDA_SMALL_NUMBER) return 0.f;
 
-    // Bin the values
     TArray<int32> Bins;
     Bins.SetNumZeroed(NumBins);
 
@@ -314,7 +411,6 @@ float UTelemetryCollector::ComputeEntropy(const TArray<float>& Values, int32 Num
         Bins[BinIdx]++;
     }
 
-    // Compute Shannon entropy: H = -sum(p * log2(p))
     float Entropy = 0.f;
     float N = (float)Values.Num();
     for (int32 Count : Bins)

@@ -12,16 +12,18 @@
  * Every tick it samples the player's state and accumulates the raw
  * measurements needed to compute the final session features.
  *
- * At session end, call FinalizeSession() to compute aggregated features
- * and hand them to UTelemetryLogger.
+ * Automatic features (no Blueprint wiring needed):
+ *   - Enemy visibility detection via Line Trace (every 0.2s)
+ *   - Reaction time measurement (enemy visible → first shot)
  *
  * Blueprint Integration:
  *   1. Add this component to BP_ShooterCharacter in UE5 editor
  *   2. Call RecordShot() from the weapon fire event
- *   3. Call RecordHit() when a shot hits (with bIsHeadshot)
+ *   3. Call RecordHit(bIsHeadshot) when a shot hits — bIsHeadshot auto-detected via Bone Name
  *   4. Call RecordKill() / RecordDeath() from GameMode kill events
- *   5. Call RecordEnemyVisible() / RecordFirstShotAfterVisible() for reaction time
- *   6. Call FinalizeSession() on player disconnect / round end
+ *   5. Call FinalizeSession() on player disconnect / round end
+ *
+ * UE Version: 5.7
  */
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class SHOOTERGAME_API UTelemetryCollector : public UActorComponent
@@ -41,9 +43,23 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Telemetry")
     void RecordShot();
 
-    /** Call when a shot hits something */
+    /**
+     * Call when a shot hits something.
+     * bIsHeadshot is detected automatically via Bone Name — just pass false,
+     * or pass the actual bone name via RecordHitWithBone() for accuracy.
+     */
     UFUNCTION(BlueprintCallable, Category = "Telemetry")
     void RecordHit(bool bIsHeadshot);
+
+    /**
+     * Call when a shot hits something — preferred version.
+     * Automatically checks if the HitBoneName is a head bone.
+     * Use this instead of RecordHit() for accurate headshot detection.
+     *
+     * @param HitBoneName - The bone name from Break Hit Result → Bone Name
+     */
+    UFUNCTION(BlueprintCallable, Category = "Telemetry")
+    void RecordHitWithBone(FName HitBoneName);
 
     /** Call when this player gets a kill */
     UFUNCTION(BlueprintCallable, Category = "Telemetry")
@@ -56,6 +72,7 @@ public:
     /**
      * Call when an enemy first becomes visible to this player.
      * Starts the reaction time timer.
+     * Note: Also called automatically via internal Line Trace every 0.2s.
      */
     UFUNCTION(BlueprintCallable, Category = "Telemetry")
     void RecordEnemyVisible();
@@ -67,9 +84,7 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Telemetry")
     void RecordFirstShotAfterVisible();
 
-    /**
-     * Set player ID (use player name or controller ID)
-     */
+    /** Set player ID (use player name or controller ID) */
     UFUNCTION(BlueprintCallable, Category = "Telemetry")
     void SetPlayerID(const FString& InPlayerID);
 
@@ -87,13 +102,34 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Telemetry")
     void FinalizeSession(UTelemetryLogger* Logger);
 
-    // Maximum legal movement speed in the game (cm/s) — adjust to match your character
+    /** Maximum legal movement speed in the game (cm/s) */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Telemetry|Config")
     float MaxLegalSpeed;
 
-    // Sampling interval for movement/aim data (seconds)
+    /** Sampling interval for movement/aim data (seconds) */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Telemetry|Config")
     float SamplingInterval;
+
+    /**
+     * How often (seconds) to run the enemy visibility Line Trace.
+     * Default: 0.2s (5 checks per second)
+     */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Telemetry|Config")
+    float EnemyCheckInterval;
+
+    /**
+     * Max distance for enemy visibility Line Trace (cm).
+     * Default: 5000cm = 50m
+     */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Telemetry|Config")
+    float EnemyCheckDistance;
+
+    /**
+     * Bone names that count as headshot bones.
+     * Default: {"head", "Head", "HEAD", "neck_01"}
+     */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Telemetry|Config")
+    TArray<FName> HeadshotBoneNames;
 
 private:
     // --- Identifiers ---
@@ -106,26 +142,24 @@ private:
     float EnemyVisibleTimestamp;
     bool  bWaitingForReactionShot;
     float LastShotTimestamp;
+    float LastEnemyCheckTime;
 
     // --- Aim raw samples ---
-    TArray<float> AimAngularSpeeds;       // degrees/sec per sample
-    TArray<float> AimAngularErrors;       // angular error at each shot
-    int32         AimFlipCount;           // number of abrupt >90° flips
-
-    FVector LastViewDirection;
+    TArray<float> AimAngularSpeeds;
+    TArray<float> AimAngularErrors;
+    int32         AimFlipCount;
+    FVector       LastViewDirection;
 
     // --- Movement raw samples ---
-    TArray<float> MovementSpeeds;         // cm/s per sample
-    int32         DirectionChangeCount;   // total direction changes
-    int32         SpeedViolationCount;    // frames exceeding MaxLegalSpeed
+    TArray<float> MovementSpeeds;
+    int32         DirectionChangeCount;
+    int32         SpeedViolationCount;
     FVector       LastMoveDirection;
-
-    // Path entropy helpers
-    TArray<float> MovementAngles;         // heading angles for entropy calc
+    TArray<float> MovementAngles;
 
     // --- Timing raw samples ---
-    TArray<float> ReactionTimes;          // seconds from enemy visible to first shot
-    TArray<float> ShotIntervals;          // seconds between consecutive shots
+    TArray<float> ReactionTimes;
+    TArray<float> ShotIntervals;
 
     // --- Rate counters ---
     int32 TotalShots;
@@ -134,8 +168,23 @@ private:
     int32 TotalKills;
     int32 TotalDeaths;
 
-    // --- Helpers ---
+    // --- Internal helpers ---
     float ComputeMean(const TArray<float>& Values) const;
     float ComputeStdDev(const TArray<float>& Values, float Mean) const;
     float ComputeEntropy(const TArray<float>& Values, int32 NumBins = 8) const;
+
+    /** Runs a Line Trace to check if an enemy NPC is in the player's line of sight */
+    void CheckEnemyLineOfSight();
+
+    /** Returns true if the given bone name is considered a headshot bone */
+    bool IsHeadshotBone(FName BoneName) const;
+
+    /**
+     * Callback: wird aufgerufen wenn der Owner Schaden bekommt.
+     * Ruft RecordHit auf dem Schützen (Instigator) auf.
+     */
+    UFUNCTION()
+    void OnOwnerTakeAnyDamage(AActor* DamagedActor, float Damage,
+                               const UDamageType* DamageType,
+                               AController* InstigatedBy, AActor* DamageCauser);
 };
