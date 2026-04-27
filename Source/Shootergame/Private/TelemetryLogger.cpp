@@ -25,6 +25,9 @@ void UTelemetryLogger::FlushToCSV(const FString& Filename)
     const FString SaveDir  = GetSaveDirectory();
     const FString FilePath = FPaths::Combine(SaveDir, Filename + TEXT(".csv"));
 
+    // Ensure the directory exists (creates Saved/Telemetry/ if missing)
+    IFileManager::Get().MakeDirectory(*SaveDir, true);
+
     // Check if file already exists — if so, append rows only (no header duplication)
     bool bFileExists = IFileManager::Get().FileExists(*FilePath);
 
