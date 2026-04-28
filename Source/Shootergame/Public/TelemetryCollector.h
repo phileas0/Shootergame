@@ -84,6 +84,18 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Telemetry")
     void RecordFirstShotAfterVisible();
 
+    /**
+     * Aktiviert oder deaktiviert die Aufzeichnung.
+     * Wird vom GameMode auf false gesetzt während WaitingForPlayers / Countdown / PostGame.
+     * Alle Record*-Funktionen und das Tick-Sampling werden ignoriert solange false.
+     */
+    UFUNCTION(BlueprintCallable, Category = "Telemetry")
+    void SetRecordingEnabled(bool bEnabled);
+
+    /** Gibt an ob die Aufzeichnung aktiv ist */
+    UFUNCTION(BlueprintPure, Category = "Telemetry")
+    bool IsRecordingEnabled() const { return bRecordingEnabled; }
+
     /** Set player ID (use player name or controller ID) */
     UFUNCTION(BlueprintCallable, Category = "Telemetry")
     void SetPlayerID(const FString& InPlayerID);
@@ -132,6 +144,9 @@ public:
     TArray<FName> HeadshotBoneNames;
 
 private:
+    // --- Recording Gate ---
+    bool bRecordingEnabled;
+
     // --- Identifiers ---
     FString PlayerID;
     int32   Label;

@@ -20,8 +20,9 @@ UTelemetryCollector::UTelemetryCollector()
     // Default headshot bone names — covers most UE5 humanoid skeletons
     HeadshotBoneNames = { TEXT("head"), TEXT("Head"), TEXT("HEAD"), TEXT("neck_01"), TEXT("neck_02") };
 
-    PlayerID  = TEXT("Unknown");
-    Label     = 0;
+    PlayerID          = TEXT("Unknown");
+    Label             = 0;
+    bRecordingEnabled = false;  // Erst aktiv wenn GameMode InProgress meldet
 
     SessionStartTime        = 0.f;
     LastSampleTime          = 0.f;
@@ -76,6 +77,8 @@ void UTelemetryCollector::TickComponent(float DeltaTime, ELevelTick TickType,
                                         FActorComponentTickFunction* ThisTickFunction)
 {
     Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+    if (!bRecordingEnabled) return;
 
     ACharacter* Owner = Cast<ACharacter>(GetOwner());
     if (!Owner || !Owner->HasAuthority()) return;
@@ -139,31 +142,66 @@ void UTelemetryCollector::TickComponent(float DeltaTime, ELevelTick TickType,
     LastSampleTime = Now;
 }
 
+void UTelemetryCollector::SetRecordingEnabled(bool bEnabled)
+{
+    bRecordingEnabled = bEnabled;
+
+    if (bEnabled)
+    {
+        // Session-Start zurücksetzen damit die Dauer korrekt gemessen wird
+        SessionStartTime        = UGameplayStatics::GetTimeSeconds(GetWorld());
+        LastSampleTime          = SessionStartTime;
+        LastEnemyCheckTime      = SessionStartTime;
+        bWaitingForReactionShot = false;
+        LastShotTimestamp       = -1.f;
+
+        // Rohdaten löschen (neue Runde)
+        AimAngularSpeeds.Empty();
+        AimAngularErrors.Empty();
+        MovementSpeeds.Empty();
+        MovementAngles.Empty();
+        ReactionTimes.Empty();
+        ShotIntervals.Empty();
+
+        AimFlipCount         = 0;
+        DirectionChangeCount = 0;
+        SpeedViolationCount  = 0;
+        TotalShots           = 0;
+        TotalHits            = 0;
+        TotalHeadshots       = 0;
+        TotalKills           = 0;
+        TotalDeaths          = 0;
+    }
+
+    UE_LOG(LogTemp, Log, TEXT("[TelemetryCollector] Recording %s für: %s"),
+        bEnabled ? TEXT("aktiviert") : TEXT("deaktiviert"), *PlayerID);
+}
+
 void UTelemetryCollector::RecordShot()
 {
+    if (!bRecordingEnabled) return;
+
     float Now = UGameplayStatics::GetTimeSeconds(GetWorld());
     TotalShots++;
 
     if (LastShotTimestamp > 0.f)
-    {
         ShotIntervals.Add(Now - LastShotTimestamp);
-    }
     LastShotTimestamp = Now;
 
     if (bWaitingForReactionShot)
-    {
         RecordFirstShotAfterVisible();
-    }
 }
 
 void UTelemetryCollector::RecordHit(bool bIsHeadshot)
 {
+    if (!bRecordingEnabled) return;
     TotalHits++;
     if (bIsHeadshot) TotalHeadshots++;
 }
 
 void UTelemetryCollector::RecordHitWithBone(FName HitBoneName)
 {
+    if (!bRecordingEnabled) return;
     TotalHits++;
     if (IsHeadshotBone(HitBoneName))
     {
@@ -174,17 +212,19 @@ void UTelemetryCollector::RecordHitWithBone(FName HitBoneName)
 
 void UTelemetryCollector::RecordKill()
 {
+    if (!bRecordingEnabled) return;
     TotalKills++;
 }
 
 void UTelemetryCollector::RecordDeath()
 {
+    if (!bRecordingEnabled) return;
     TotalDeaths++;
 }
 
 void UTelemetryCollector::RecordEnemyVisible()
 {
-    // Only start a new reaction timer if we're not already waiting for a shot
+    if (!bRecordingEnabled) return;
     if (!bWaitingForReactionShot)
     {
         EnemyVisibleTimestamp   = UGameplayStatics::GetTimeSeconds(GetWorld());
@@ -194,13 +234,11 @@ void UTelemetryCollector::RecordEnemyVisible()
 
 void UTelemetryCollector::RecordFirstShotAfterVisible()
 {
-    if (!bWaitingForReactionShot) return;
+    if (!bRecordingEnabled || !bWaitingForReactionShot) return;
 
     float ReactionTime = UGameplayStatics::GetTimeSeconds(GetWorld()) - EnemyVisibleTimestamp;
     if (ReactionTime <= 5.f && ReactionTime >= 0.f)
-    {
         ReactionTimes.Add(ReactionTime);
-    }
     bWaitingForReactionShot = false;
 }
 
