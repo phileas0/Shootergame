@@ -5,125 +5,171 @@
 #include "TelemetryLogger.generated.h"
 
 /**
- * Stores per-session telemetry data for one player.
- * Features correspond to the categories defined in Bachelorarbeit Kapitel 2.1:
- *   - Aim-Features
- *   - Movement-Features
- *   - Timing-Features
- *   - Rate-Features
+ * FPlayerSessionData
+ * 
+ * Dies ist unser Container für eine fertige Spieler-Session. Er enthält exakt die 25 Features, 
+ * die wir in Kapitel 2.1 der Bachelorarbeit definiert haben.
+ * Diese Struktur wird nach Abschluss einer Runde / nach dem Tod des Spielers vom 
+ * TelemetryCollector befüllt und dann an den Logger übergeben.
  */
 USTRUCT(BlueprintType)
 struct FPlayerSessionData
 {
     GENERATED_BODY()
 
-    // --- Player identification ---
+    // ==========================================
+    // META-DATEN (Identifikation)
+    // ==========================================
+    
+    /** Eindeutige ID des Spielers (z.B. AccountName oder Controller-ID) */
     UPROPERTY(BlueprintReadWrite, Category = "Telemetry")
     FString PlayerID;
 
+    /** Wie lange hat diese Session (in Sekunden) gedauert? Kurze Sessions < 1s filtern wir aus. */
     UPROPERTY(BlueprintReadWrite, Category = "Telemetry")
     float SessionDurationSeconds;
 
-    // --- Aim-Features ---
-    // Average angular speed of view direction changes (degrees/second)
+    // ==========================================
+    // 1. AIM-FEATURES (Zielen & Mausbewegungen)
+    // ==========================================
+    
+    /** Durchschnittliche Winkelgeschwindigkeit der Kameradrehung in Grad pro Sekunde. */
     UPROPERTY(BlueprintReadWrite, Category = "Telemetry|Aim")
     float AimAngularSpeedMean;
 
-    // Standard deviation of angular speed — low value = suspicious (aimbot)
+    /** 
+     * Standardabweichung der Winkelgeschwindigkeit. 
+     * Extrem wichtig: Aimbots ziehen oft maschinell konstant auf Ziele, wodurch dieser Wert sehr niedrig wird. 
+     * Menschen schwanken hier stark.
+     */
     UPROPERTY(BlueprintReadWrite, Category = "Telemetry|Aim")
     float AimAngularSpeedStdDev;
 
-    // Mean angular error: distance from crosshair to target center at shot time
+    /** 
+     * Durchschnittliche Ungenauigkeit beim Schuss (Abstand vom Fadenkreuz zur Zielmitte). 
+     * Hinweis: Aktuell meist 0, da wir perfekte Hitscans ohne komplexes Bullet-Spread-Tracking nutzen.
+     */
     UPROPERTY(BlueprintReadWrite, Category = "Telemetry|Aim")
     float AimAngularErrorMean;
 
-    // Standard deviation of angular error
+    /** Standardabweichung der Aiming-Ungenauigkeit. */
     UPROPERTY(BlueprintReadWrite, Category = "Telemetry|Aim")
     float AimAngularErrorStdDev;
 
-    // Ratio of abrupt aim direction flips (>90 degrees in one tick)
+    /** 
+     * Anteil der Frames, in denen der Spieler seine Blickrichtung schlagartig um über 90 Grad geändert hat.
+     * Ein hoher Wert deutet auf "Aim-Snapping" (Aimbot schaltet auf Gegner hinter sich auf) hin.
+     */
     UPROPERTY(BlueprintReadWrite, Category = "Telemetry|Aim")
     float AimFlipRatio;
 
-    // --- Movement-Features ---
-    // Mean movement speed (cm/s)
+    // ==========================================
+    // 2. MOVEMENT-FEATURES (Laufen & Positionierung)
+    // ==========================================
+    
+    /** Durchschnittliche Laufgeschwindigkeit in cm/s. */
     UPROPERTY(BlueprintReadWrite, Category = "Telemetry|Movement")
     float MovementSpeedMean;
 
-    // Max movement speed recorded this session
+    /** Die absolute Höchstgeschwindigkeit, die der Spieler in dieser Session erreicht hat. */
     UPROPERTY(BlueprintReadWrite, Category = "Telemetry|Movement")
     float MovementSpeedMax;
 
-    // Frequency of direction changes per second
+    /** Wie oft pro Sekunde hat der Spieler seine Laufrichtung abrupt geändert? (Zick-Zack-Laufen) */
     UPROPERTY(BlueprintReadWrite, Category = "Telemetry|Movement")
     float DirectionChangesPerSecond;
 
-    // Ratio of frames where speed exceeded the game's legal max speed
+    /** 
+     * Anteil der Frames, in denen der Spieler schneller lief, als das Spiel es eigentlich erlaubt.
+     * Unser Haupt-Indikator für Speedhacks.
+     */
     UPROPERTY(BlueprintReadWrite, Category = "Telemetry|Movement")
     float SpeedViolationRatio;
 
-    // Path entropy: measure of unpredictability/variability of movement path
+    /** 
+     * Shannon-Entropie des Laufweges. Misst die Unvorhersehbarkeit. 
+     * Bots laufen oft stur geradeaus (Entropie nahe 0), Menschen navigieren komplexer.
+     */
     UPROPERTY(BlueprintReadWrite, Category = "Telemetry|Movement")
     float MovementPathEntropy;
 
-    // --- Timing-Features ---
-    // Mean reaction time from enemy becoming visible to first shot fired (seconds)
+    // ==========================================
+    // 3. TIMING-FEATURES (Reaktionszeiten & Klicks)
+    // ==========================================
+    
+    /** 
+     * Durchschnittliche Reaktionszeit in Sekunden. 
+     * (Zeit zwischen "Gegner wird sichtbar" und "Spieler drückt ab").
+     */
     UPROPERTY(BlueprintReadWrite, Category = "Telemetry|Timing")
     float ReactionTimeMean;
 
-    // Standard deviation of reaction time — very low = triggerbot signature
+    /** 
+     * Varianz der Reaktionszeit. 
+     * Triggerbots schießen unmenschlich konstant, Menschen variieren immer. Ein Kern-Feature für das ML-Modell!
+     */
     UPROPERTY(BlueprintReadWrite, Category = "Telemetry|Timing")
     float ReactionTimeStdDev;
 
-    // Mean time between consecutive shots (seconds)
+    /** Durchschnittliche Zeitspanne zwischen zwei aufeinanderfolgenden Schüssen. */
     UPROPERTY(BlueprintReadWrite, Category = "Telemetry|Timing")
     float ShotIntervalMean;
 
-    // Standard deviation of shot intervals
+    /** 
+     * Varianz der Schussabstände. 
+     * Genau wie bei der Reaktionszeit verrät eine Varianz nahe 0 einen Triggerbot/Makro, der Klicks perfekt simuliert.
+     */
     UPROPERTY(BlueprintReadWrite, Category = "Telemetry|Timing")
     float ShotIntervalStdDev;
 
-    // Shots fired per second
+    /** Feuerrate (Schüsse pro Sekunde). */
     UPROPERTY(BlueprintReadWrite, Category = "Telemetry|Timing")
     float ShotsPerSecond;
 
-    // --- Rate-Features ---
-    // Hit rate: hits / shots fired
+    // ==========================================
+    // 4. RATE-FEATURES (Statistiken & Quoten)
+    // ==========================================
+    
+    /** Trefferquote (Treffer geteilt durch abgefeuerte Schüsse). */
     UPROPERTY(BlueprintReadWrite, Category = "Telemetry|Rate")
     float HitRate;
 
-    // Headshot rate: headshots / total hits
+    /** Kopfschuss-Quote (Kopfschüsse geteilt durch alle Treffer). */
     UPROPERTY(BlueprintReadWrite, Category = "Telemetry|Rate")
     float HeadshotRate;
 
-    // Kills per minute
+    /** Kills pro Minute (KPM). */
     UPROPERTY(BlueprintReadWrite, Category = "Telemetry|Rate")
     float KillsPerMinute;
 
-    // Kill/Death ratio
+    /** Kill/Death Ratio (K/D). */
     UPROPERTY(BlueprintReadWrite, Category = "Telemetry|Rate")
     float KillDeathRatio;
 
-    // Total shots fired this session
+    /** Gesamtzahl abgefeuerter Schüsse. */
     UPROPERTY(BlueprintReadWrite, Category = "Telemetry|Rate")
     int32 TotalShots;
 
-    // Total hits this session
+    /** Gesamtzahl der Treffer auf Feinde. */
     UPROPERTY(BlueprintReadWrite, Category = "Telemetry|Rate")
     int32 TotalHits;
 
-    // Total kills this session
+    /** Gesamtzahl der Kills in dieser Session. */
     UPROPERTY(BlueprintReadWrite, Category = "Telemetry|Rate")
     int32 TotalKills;
 
-    // Total deaths this session
+    /** Gesamtzahl der Tode. */
     UPROPERTY(BlueprintReadWrite, Category = "Telemetry|Rate")
     int32 TotalDeaths;
 
-    // Ground truth label: 0 = legit, 1 = cheater (set manually for training data)
+    /** 
+     * Ground-Truth-Label für unsere Trainingsdaten.
+     * 0 = Legitim (Normaler Spieler), 1 = Cheater.
+     */
     UPROPERTY(BlueprintReadWrite, Category = "Telemetry")
     int32 Label;
 
+    // Standard-Konstruktor initialisiert alles brav mit 0, damit wir keine Garbage-Werte im ML-Modell haben.
     FPlayerSessionData()
         : SessionDurationSeconds(0.f)
         , AimAngularSpeedMean(0.f), AimAngularSpeedStdDev(0.f)
@@ -145,12 +191,13 @@ struct FPlayerSessionData
 /**
  * UTelemetryLogger
  *
- * Singleton-style UObject that collects per-player session data
- * and writes it to a CSV file in the Saved/ directory.
+ * Das ist unser Singleton-ähnliches Objekt, das die fertigen Sessions (`FPlayerSessionData`) 
+ * entgegennimmt, kurz im Arbeitsspeicher (Puffer) sammelt und dann blockweise 
+ * als CSV-Datei in das `Saved/`-Verzeichnis der Engine exportiert.
  *
- * Usage from Blueprints:
- *   - Call LogSessionData() at the end of each player session (on death, disconnect, round end)
- *   - Call FlushToCSV() at round end to write all data to disk
+ * Blueprint Nutzung:
+ *   - `LogSessionData()` aufrufen, wenn ein Spieler stirbt, disconnectet oder die Runde endet.
+ *   - `FlushToCSV()` aufrufen (z.B. am Rundenende), um den Puffer endgültig auf die Festplatte zu schreiben.
  */
 UCLASS(Blueprintable, BlueprintType)
 class SHOOTERGAME_API UTelemetryLogger : public UObject
@@ -161,45 +208,43 @@ public:
     UTelemetryLogger();
 
     /**
-     * Logs a completed player session's telemetry data.
-     * Call this server-side when a session ends.
+     * Schiebt eine fertige Spieler-Session in unseren internen Puffer.
+     * Dieser Aufruf ist extrem schnell und blockiert den Game-Thread nicht.
      */
     UFUNCTION(BlueprintCallable, Category = "Telemetry")
     void LogSessionData(const FPlayerSessionData& SessionData);
 
     /**
-     * Writes all buffered session data to CSV.
-     * Call at end of round or when you want to flush to disk.
-     * @param Filename - Name for the CSV file (without extension). Default: "telemetry_log"
+     * Schreibt alle im Puffer gesammelten Sessions auf einmal in die CSV-Datei.
+     * Sollte am Ende einer Runde aufgerufen werden, da Festplattenzugriffe kurz Ruckler verursachen können.
+     * 
+     * @param Filename - Der Name der Datei (ohne .csv Endung). Standard ist "telemetry_log".
      */
     UFUNCTION(BlueprintCallable, Category = "Telemetry")
     void FlushToCSV(const FString& Filename = TEXT("telemetry_log"));
 
-    /**
-     * Clears all buffered session data (after flushing).
-     */
+    /** Leert den internen Arbeitsspeicher-Puffer. Passiert nach FlushToCSV automatisch. */
     UFUNCTION(BlueprintCallable, Category = "Telemetry")
     void ClearBuffer();
 
-    /**
-     * Returns the number of sessions currently buffered.
-     */
+    /** Gibt zurück, wie viele Sessions gerade im Puffer liegen und noch nicht gespeichert wurden. */
     UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Telemetry")
     int32 GetBufferedSessionCount() const;
 
-    /**
-     * Returns the full path where CSV files are saved.
+    /** 
+     * Hilfsfunktion: Gibt den exakten Pfad zum Ordner zurück, in dem die CSV landet. 
+     * Standardmäßig ist das "DeinProjekt/Saved/Telemetry/". 
      */
     UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Telemetry")
     static FString GetSaveDirectory();
 
 private:
-    // Buffer of sessions waiting to be flushed to disk
+    /** Unser RAM-Puffer. Sammelt die Daten, bis wir FlushToCSV aufrufen. */
     TArray<FPlayerSessionData> SessionBuffer;
 
-    // Returns the CSV header row
+    /** Liefert die exakte Kopfzeile für die CSV. Spaltennamen müssen 1:1 zum Python-ML-Skript passen! */
     static FString GetCSVHeader();
 
-    // Converts a single session to a CSV row
+    /** Konvertiert ein Session-Struct in eine kommaseparierte Textzeile für die Datei. */
     static FString SessionToCSVRow(const FPlayerSessionData& Data);
 };
