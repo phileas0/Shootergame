@@ -12,12 +12,15 @@ public class Shootergame : ModuleRules
             "CoreUObject",
             "Engine",
             "InputCore",
-            "EnhancedInput",      // Für IA_Shoot und Enhanced Input Actions im Blueprint
+            "EnhancedInput",          // Für IA_Shoot und Enhanced Input Actions im Blueprint
+            "LearningAgents",         // RL-Plugin: Manager, Interactor, Observations, Actions
+            "LearningAgentsTraining", // PPO-Trainer, TrainingEnvironment, Recorder
         });
 
         PrivateDependencyModuleNames.AddRange(new string[]
         {
             "ApplicationCore",    // Platform-Utilities
+            "AIModule",           // AAIController, EQS — vom RL-Interactor benötigt
         });
     }
 }
