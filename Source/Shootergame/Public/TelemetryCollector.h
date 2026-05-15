@@ -183,6 +183,10 @@ private:
     int32 TotalKills;
     int32 TotalDeaths;
 
+    // --- Hit dedup (prevents counting same projectile overlap multiple times) ---
+    float LastHitTime;
+    float HitCooldown; // seconds — one hit per actor per window
+
     // --- Internal helpers ---
     float ComputeMean(const TArray<float>& Values) const;
     float ComputeStdDev(const TArray<float>& Values, float Mean) const;

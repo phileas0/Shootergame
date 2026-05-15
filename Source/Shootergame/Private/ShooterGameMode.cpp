@@ -457,10 +457,8 @@ void AShooterGameMode::OnPawnTakeAnyDamage(AActor* DamagedActor, float Damage,
     AShooterGameState* GS = GetShooterGameState();
     if (!GS || GS->GamePhase != EShooterGamePhase::InProgress) return;
 
-    UTelemetryCollector* ShooterCollector =
-        InstigatorPawn->FindComponentByClass<UTelemetryCollector>();
-    if (ShooterCollector)
-        ShooterCollector->RecordHit(false);
+    // RecordHit wird automatisch via UTelemetryCollector::OnOwnerTakeAnyDamage gezählt
+    // — kein manueller Aufruf hier nötig (würde doppelt zählen)
 
     ACharacter* DamagedChar = Cast<ACharacter>(DamagedActor);
     if (DamagedChar)

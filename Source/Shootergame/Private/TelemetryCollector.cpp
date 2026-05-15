@@ -39,6 +39,9 @@ UTelemetryCollector::UTelemetryCollector()
     TotalHeadshots = 0;
     TotalKills     = 0;
     TotalDeaths    = 0;
+
+    LastHitTime = -999.f;
+    HitCooldown = 0.30f; // ignore repeated hits within 300ms from same bullet
 }
 
 void UTelemetryCollector::BeginPlay()
@@ -171,6 +174,7 @@ void UTelemetryCollector::SetRecordingEnabled(bool bEnabled)
         TotalHeadshots       = 0;
         TotalKills           = 0;
         TotalDeaths          = 0;
+        LastHitTime          = -999.f;
     }
 
     UE_LOG(LogTemp, Log, TEXT("[TelemetryCollector] Recording %s für: %s"),
@@ -351,9 +355,16 @@ void UTelemetryCollector::OnOwnerTakeAnyDamage(AActor* DamagedActor, float Damag
         InstigatorPawn->FindComponentByClass<UTelemetryCollector>();
     if (ShooterCollector)
     {
-        ShooterCollector->RecordHit(false);
-        UE_LOG(LogTemp, Log, TEXT("[TelemetryCollector] RecordHit für Schütze: %s → Opfer: %s"),
-            *InstigatorPawn->GetName(), *DamagedActor->GetName());
+        // Dedup: ignore repeated damage events within HitCooldown seconds
+        // (projectile overlaps can fire multiple frames for a single hit)
+        float Now = UGameplayStatics::GetTimeSeconds(GetWorld());
+        if (Now - ShooterCollector->LastHitTime >= ShooterCollector->HitCooldown)
+        {
+            ShooterCollector->LastHitTime = Now;
+            ShooterCollector->RecordHit(false);
+            UE_LOG(LogTemp, Log, TEXT("[TelemetryCollector] RecordHit für Schütze: %s → Opfer: %s"),
+                *InstigatorPawn->GetName(), *DamagedActor->GetName());
+        }
     }
 }
 
