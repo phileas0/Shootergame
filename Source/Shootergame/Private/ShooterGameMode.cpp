@@ -11,12 +11,12 @@
 #include "TimerManager.h"
 
 AShooterGameMode::AShooterGameMode()
-    : TelemetryLogger(nullptr)
-    , ConnectedPlayerCount(0)
-    , MatchDuration(300.f)
+    : MatchDuration(300.f)
     , CountdownDuration(5.f)
     , PostGameDuration(15.f)
     , MinPlayersToStart(2)
+    , TelemetryLogger(nullptr)
+    , ConnectedPlayerCount(0)
 {
     CSVFilename        = TEXT("session_01");
     GameStateClass     = AShooterGameState::StaticClass();
