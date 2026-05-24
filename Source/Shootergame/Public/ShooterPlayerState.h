@@ -10,6 +10,8 @@
  * Replizierte Kill/Death-Statistiken pro Spieler.
  * Wird vom GameMode befüllt und vom Leaderboard-Widget gelesen.
  */
+class UTelemetryCollector;
+
 UCLASS()
 class SHOOTERGAME_API AShooterPlayerState : public APlayerState
 {
@@ -17,6 +19,9 @@ class SHOOTERGAME_API AShooterPlayerState : public APlayerState
 
 public:
     AShooterPlayerState();
+
+    UPROPERTY(BlueprintReadOnly, Category = "Telemetry")
+    UTelemetryCollector* TelemetryCollector;
 
     /** Anzahl Kills dieser Runde */
     UPROPERTY(Replicated, BlueprintReadOnly, Category = "Stats")

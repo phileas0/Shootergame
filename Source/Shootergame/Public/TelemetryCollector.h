@@ -96,6 +96,17 @@ public:
     UFUNCTION(BlueprintPure, Category = "Telemetry")
     bool IsRecordingEnabled() const { return bRecordingEnabled; }
 
+    /** Debug-Getter für Flush-Logging */
+    int32 GetTotalShots()  const { return TotalShots; }
+    int32 GetTotalKills()  const { return TotalKills; }
+    int32 GetTotalDeaths() const { return TotalDeaths; }
+    bool  IsSessionFinalized() const { return bSessionFinalized; }
+    void  SetSessionFinalized(bool bFinalized) { bSessionFinalized = bFinalized; }
+
+    /** Merges raw telemetry arrays and sums up counters from another collector */
+    UFUNCTION(BlueprintCallable, Category = "Telemetry")
+    void MergeTelemetry(UTelemetryCollector* SourceCollector);
+
     /** Set player ID (use player name or controller ID) */
     UFUNCTION(BlueprintCallable, Category = "Telemetry")
     void SetPlayerID(const FString& InPlayerID);
@@ -146,6 +157,7 @@ public:
 private:
     // --- Recording Gate ---
     bool bRecordingEnabled;
+    bool bSessionFinalized;
 
     // --- Identifiers ---
     FString PlayerID;
@@ -153,6 +165,7 @@ private:
 
     // --- Timing ---
     float SessionStartTime;
+    float AccumulatedDuration;
     float LastSampleTime;
     float EnemyVisibleTimestamp;
     bool  bWaitingForReactionShot;

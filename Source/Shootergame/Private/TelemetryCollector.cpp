@@ -1,11 +1,17 @@
 #include "TelemetryCollector.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/Controller.h"
+#include "GameFramework/Pawn.h"
+#include "GameFramework/PlayerState.h"
+#include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "Math/UnrealMathUtility.h"
 #include "Algo/MaxElement.h"
 #include "DrawDebugHelpers.h"
 #include "Engine/World.h"
+#include "ShooterGameState.h"
+#include "ShooterPlayerState.h"
 
 UTelemetryCollector::UTelemetryCollector()
 {
@@ -22,9 +28,11 @@ UTelemetryCollector::UTelemetryCollector()
 
     PlayerID          = TEXT("Unknown");
     Label             = 0;
-    bRecordingEnabled = false;  // Erst aktiv wenn GameMode InProgress meldet
+    bRecordingEnabled  = false;  // Erst aktiv wenn GameMode InProgress meldet
+    bSessionFinalized  = false;
 
     SessionStartTime        = 0.f;
+    AccumulatedDuration     = 0.f;
     LastSampleTime          = 0.f;
     EnemyVisibleTimestamp   = 0.f;
     bWaitingForReactionShot = false;
@@ -81,10 +89,45 @@ void UTelemetryCollector::TickComponent(float DeltaTime, ELevelTick TickType,
 {
     Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-    if (!bRecordingEnabled) return;
-
     ACharacter* Owner = Cast<ACharacter>(GetOwner());
     if (!Owner || !Owner->HasAuthority()) return;
+
+    // Auto-resolve PlayerID and auto-enable recording if game is InProgress
+    AController* Ctrl = Owner->GetController();
+    AShooterPlayerState* PS = Ctrl ? Cast<AShooterPlayerState>(Ctrl->PlayerState) : nullptr;
+    if (!PS)
+    {
+        PS = Cast<AShooterPlayerState>(Owner->GetPlayerState());
+    }
+
+    if (PS)
+    {
+        FString CurrentName = PS->GetPlayerName();
+        // If we don't have a valid ID yet, or it was the default engine name, update it when a better name is available.
+        if (PlayerID == TEXT("Unknown") || PlayerID.StartsWith(TEXT("ShooterPlayerState")))
+        {
+            if (!CurrentName.IsEmpty() && !CurrentName.StartsWith(TEXT("ShooterPlayerState")))
+            {
+                PlayerID = CurrentName;
+            }
+            else if (PlayerID == TEXT("Unknown") && !CurrentName.IsEmpty())
+            {
+                PlayerID = CurrentName;
+            }
+        }
+
+        if (!bRecordingEnabled)
+        {
+            UWorld* World = GetWorld();
+            AShooterGameState* GS = World ? Cast<AShooterGameState>(World->GetGameState()) : nullptr;
+            if (GS && GS->GamePhase == EShooterGamePhase::InProgress)
+            {
+                SetRecordingEnabled(true);
+            }
+        }
+    }
+
+    if (!bRecordingEnabled) return;
 
     float Now = UGameplayStatics::GetTimeSeconds(GetWorld());
 
@@ -153,6 +196,7 @@ void UTelemetryCollector::SetRecordingEnabled(bool bEnabled)
     {
         // Session-Start zurücksetzen damit die Dauer korrekt gemessen wird
         SessionStartTime        = UGameplayStatics::GetTimeSeconds(GetWorld());
+        AccumulatedDuration     = 0.f;
         LastSampleTime          = SessionStartTime;
         LastEnemyCheckTime      = SessionStartTime;
         bWaitingForReactionShot = false;
@@ -175,6 +219,7 @@ void UTelemetryCollector::SetRecordingEnabled(bool bEnabled)
         TotalKills           = 0;
         TotalDeaths          = 0;
         LastHitTime          = -999.f;
+        bSessionFinalized    = false;
     }
 
     UE_LOG(LogTemp, Log, TEXT("[TelemetryCollector] Recording %s für: %s"),
@@ -183,6 +228,8 @@ void UTelemetryCollector::SetRecordingEnabled(bool bEnabled)
 
 void UTelemetryCollector::RecordShot()
 {
+    UE_LOG(LogTemp, Log, TEXT("[RecordShot] Player=%s | bEnabled=%d | TotalShots_vorher=%d"),
+        *PlayerID, (int32)bRecordingEnabled, TotalShots);
     if (!bRecordingEnabled) return;
 
     float Now = UGameplayStatics::GetTimeSeconds(GetWorld());
@@ -216,14 +263,18 @@ void UTelemetryCollector::RecordHitWithBone(FName HitBoneName)
 
 void UTelemetryCollector::RecordKill()
 {
-    if (!bRecordingEnabled) return;
+    UE_LOG(LogTemp, Warning, TEXT("[RecordKill] Player=%s | bFinalized=%d | TotalKills_vorher=%d"),
+        *PlayerID, (int32)bSessionFinalized, TotalKills);
+    if (bSessionFinalized)  return;
     TotalKills++;
+    UE_LOG(LogTemp, Warning, TEXT("[RecordKill] => TotalKills jetzt: %d"), TotalKills);
 }
 
 void UTelemetryCollector::RecordDeath()
 {
-    if (!bRecordingEnabled) return;
+    if (bSessionFinalized)  return;
     TotalDeaths++;
+    UE_LOG(LogTemp, Warning, TEXT("[RecordDeath] Player=%s TotalDeaths=%d"), *PlayerID, TotalDeaths);
 }
 
 void UTelemetryCollector::RecordEnemyVisible()
@@ -256,16 +307,51 @@ void UTelemetryCollector::SetLabel(int32 InLabel)
     Label = InLabel;
 }
 
+void UTelemetryCollector::MergeTelemetry(UTelemetryCollector* SourceCollector)
+{
+    if (!SourceCollector) return;
+
+    // Merge raw arrays
+    AimAngularSpeeds.Append(SourceCollector->AimAngularSpeeds);
+    AimAngularErrors.Append(SourceCollector->AimAngularErrors);
+    MovementSpeeds.Append(SourceCollector->MovementSpeeds);
+    MovementAngles.Append(SourceCollector->MovementAngles);
+    ReactionTimes.Append(SourceCollector->ReactionTimes);
+    ShotIntervals.Append(SourceCollector->ShotIntervals);
+
+    // Merge counters
+    AimFlipCount         += SourceCollector->AimFlipCount;
+    DirectionChangeCount += SourceCollector->DirectionChangeCount;
+    SpeedViolationCount  += SourceCollector->SpeedViolationCount;
+    TotalShots           += SourceCollector->TotalShots;
+    TotalHits            += SourceCollector->TotalHits;
+    TotalHeadshots       += SourceCollector->TotalHeadshots;
+    TotalKills           += SourceCollector->TotalKills;
+    TotalDeaths          += SourceCollector->TotalDeaths;
+
+    float SourceDuration = SourceCollector->LastSampleTime - SourceCollector->SessionStartTime;
+    if (SourceDuration > 0.f)
+    {
+        AccumulatedDuration += SourceDuration;
+    }
+}
+
 void UTelemetryCollector::FinalizeSession(UTelemetryLogger* Logger)
 {
     if (!Logger) return;
+    if (bSessionFinalized) return;
+    bSessionFinalized = true;
 
     float Now             = UGameplayStatics::GetTimeSeconds(GetWorld());
-    float SessionDuration = Now - SessionStartTime;
-
-    if (SessionDuration < 1.f)
+    float SessionDuration = AccumulatedDuration;
+    if (bRecordingEnabled)
     {
-        UE_LOG(LogTemp, Warning, TEXT("[TelemetryCollector] Session too short (<1s), skipping: %s"), *PlayerID);
+        SessionDuration += (Now - SessionStartTime);
+    }
+
+    if (SessionDuration < 0.1f)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[TelemetryCollector] Session too short (<0.1s), skipping: %s"), *PlayerID);
         return;
     }
 

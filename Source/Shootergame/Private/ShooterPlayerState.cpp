@@ -1,10 +1,12 @@
 #include "ShooterPlayerState.h"
 #include "Net/UnrealNetwork.h"
+#include "TelemetryCollector.h"
 
 AShooterPlayerState::AShooterPlayerState()
     : Kills(0)
     , Deaths(0)
 {
+    TelemetryCollector = CreateDefaultSubobject<UTelemetryCollector>(TEXT("PersistentTelemetryCollector"));
 }
 
 float AShooterPlayerState::GetKDRatio() const

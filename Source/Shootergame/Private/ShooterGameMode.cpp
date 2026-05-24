@@ -6,6 +6,7 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/DamageType.h"
+#include "GameFramework/Info.h"
 #include "Misc/DateTime.h"
 #include "EngineUtils.h"
 #include "TimerManager.h"
@@ -84,6 +85,26 @@ void AShooterGameMode::Logout(AController* Exiting)
 
     UE_LOG(LogTemp, Log, TEXT("[GameMode] Spieler getrennt. Gesamt: %d"), ConnectedPlayerCount);
 
+    if (Exiting && TelemetryLogger)
+    {
+        AShooterPlayerState* PS = Cast<AShooterPlayerState>(Exiting->PlayerState);
+        if (PS && PS->TelemetryCollector)
+        {
+            if (APawn* Pawn = Exiting->GetPawn())
+            {
+                UTelemetryCollector* PawnCollector = Pawn->FindComponentByClass<UTelemetryCollector>();
+                if (PawnCollector && !PawnCollector->IsSessionFinalized())
+                {
+                    PS->TelemetryCollector->MergeTelemetry(PawnCollector);
+                    PawnCollector->SetSessionFinalized(true);
+                }
+            }
+            PS->TelemetryCollector->SetPlayerID(PS->GetPlayerName());
+            PS->TelemetryCollector->FinalizeSession(TelemetryLogger);
+            UE_LOG(LogTemp, Log, TEXT("[GameMode] Spieler getrennt, persistenten Telemetrie-Collector finalisiert: %s"), *PS->GetPlayerName());
+        }
+    }
+
     AShooterGameState* GS = GetShooterGameState();
     if (GS && ConnectedPlayerCount < MinPlayersToStart &&
         GS->GamePhase == EShooterGamePhase::Countdown)
@@ -109,10 +130,55 @@ void AShooterGameMode::HandleStartingNewPlayer_Implementation(APlayerController*
     if (!Pawn->OnTakeAnyDamage.IsAlreadyBound(this, &AShooterGameMode::OnPawnTakeAnyDamage))
         Pawn->OnTakeAnyDamage.AddDynamic(this, &AShooterGameMode::OnPawnTakeAnyDamage);
 
-    // Neuer Spieler während PostGame direkt einfrieren
     AShooterGameState* GS = GetShooterGameState();
+
+    // Neuer Spieler während PostGame direkt einfrieren
     if (GS && GS->GamePhase == EShooterGamePhase::PostGame)
         NewPlayer->SetIgnoreMoveInput(true);
+
+    // Neuer Pawn während laufendem Match → TelemetryCollector sofort aktivieren
+    if (GS && GS->GamePhase == EShooterGamePhase::InProgress && TelemetryLogger)
+    {
+        UTelemetryCollector* Collector = Pawn->FindComponentByClass<UTelemetryCollector>();
+        if (Collector)
+        {
+            // PlayerID vom PlayerState setzen
+            if (AShooterPlayerState* PS = NewPlayer->GetPlayerState<AShooterPlayerState>())
+                Collector->SetPlayerID(PS->GetPlayerName());
+
+            Collector->SetRecordingEnabled(true);
+            UE_LOG(LogTemp, Log, TEXT("[GameMode] TelemetryCollector für respawnten Spieler aktiviert."));
+        }
+    }
+}
+
+void AShooterGameMode::RestartPlayer(AController* NewPlayer)
+{
+    Super::RestartPlayer(NewPlayer);   // spawns + possesses the new pawn
+
+    APlayerController* PC = Cast<APlayerController>(NewPlayer);
+    if (!PC || !TelemetryLogger) return;
+
+    AShooterGameState* GS = GetShooterGameState();
+    if (!GS || GS->GamePhase != EShooterGamePhase::InProgress) return;
+
+    APawn* Pawn = PC->GetPawn();
+    if (!Pawn) return;
+
+    UTelemetryCollector* Collector = Pawn->FindComponentByClass<UTelemetryCollector>();
+    if (!Collector) return;
+
+    // Overwrite whatever the Blueprint BeginPlay may have set as PlayerID
+    // with the authoritative hardware ID stored in PlayerState.
+    if (AShooterPlayerState* PS = PC->GetPlayerState<AShooterPlayerState>())
+    {
+        FString HardwareID = PS->GetPlayerName();
+        Collector->SetPlayerID(HardwareID);
+        UE_LOG(LogTemp, Log, TEXT("[GameMode] Respawn — TelemetryCollector aktiviert für: %s → Pawn: %s"),
+            *HardwareID, *Pawn->GetName());
+    }
+
+    Collector->SetRecordingEnabled(true);
 }
 
 // ============================================================
@@ -254,7 +320,23 @@ void AShooterGameMode::OnPlayerSessionEnd(AActor* DyingCharacter, AActor* Killer
     if (VictimCollector)
     {
         VictimCollector->RecordDeath();
-        VictimCollector->FinalizeSession(TelemetryLogger);
+        AController* VictimCtrl = Cast<APawn>(DyingCharacter)->GetController();
+        AShooterPlayerState* PS = VictimCtrl ? Cast<AShooterPlayerState>(VictimCtrl->PlayerState) : nullptr;
+        if (!PS)
+        {
+            PS = Cast<AShooterPlayerState>(Cast<APawn>(DyingCharacter)->GetPlayerState());
+        }
+        if (PS && PS->TelemetryCollector && !VictimCollector->IsSessionFinalized())
+        {
+            FString ValidPlayerName = PS->GetPlayerName();
+            if (!ValidPlayerName.IsEmpty() && !ValidPlayerName.StartsWith(TEXT("ShooterPlayerState")))
+            {
+                VictimCollector->SetPlayerID(ValidPlayerName);
+            }
+            PS->TelemetryCollector->MergeTelemetry(VictimCollector);
+            VictimCollector->SetSessionFinalized(true);
+            UE_LOG(LogTemp, Log, TEXT("[GameMode] Merged telemetry on death for: %s"), *PS->GetPlayerName());
+        }
     }
 
     // PlayerState Death
@@ -267,14 +349,10 @@ void AShooterGameMode::OnPlayerSessionEnd(AActor* DyingCharacter, AActor* Killer
         }
     }
 
-    // Kill auf Killer
+    // Kill auf Killer — RecordKill wird in OnCharacterDestroyed via KillerMap gemacht,
+    // hier nur PlayerState/Leaderboard aktualisieren um Doppelzählung zu vermeiden.
     if (KillerActor && KillerActor != DyingCharacter)
     {
-        UTelemetryCollector* KillerCollector =
-            KillerActor->FindComponentByClass<UTelemetryCollector>();
-        if (KillerCollector)
-            KillerCollector->RecordKill();
-
         if (APawn* KillerPawn = Cast<APawn>(KillerActor))
         {
             if (AController* KillerCtrl = KillerPawn->GetController())
@@ -303,15 +381,47 @@ void AShooterGameMode::FlushAllSessionsToCSV()
 
     if (UWorld* World = GetWorld())
     {
-        for (FConstPlayerControllerIterator It = World->GetPlayerControllerIterator(); It; ++It)
+        // 1. Merge active Pawn collectors into PlayerState collectors
+        for (TActorIterator<ACharacter> It(World); It; ++It)
         {
-            APlayerController* PC = It->Get();
-            if (!PC) continue;
-            APawn* Pawn = PC->GetPawn();
-            if (!Pawn) continue;
-            UTelemetryCollector* Collector = Pawn->FindComponentByClass<UTelemetryCollector>();
-            if (Collector)
-                Collector->FinalizeSession(TelemetryLogger);
+            ACharacter* Char = *It;
+            if (!Char) continue;
+            
+            AController* Ctrl = Char->GetController();
+            if (!Cast<APlayerController>(Ctrl)) continue;
+            
+            UTelemetryCollector* PawnCollector = Char->FindComponentByClass<UTelemetryCollector>();
+            if (PawnCollector && !PawnCollector->IsSessionFinalized())
+            {
+                AShooterPlayerState* PS = Cast<AShooterPlayerState>(Ctrl->PlayerState);
+                if (!PS)
+                {
+                    PS = Cast<AShooterPlayerState>(Char->GetPlayerState());
+                }
+                
+                if (PS && PS->TelemetryCollector)
+                {
+                    PS->TelemetryCollector->MergeTelemetry(PawnCollector);
+                    PawnCollector->SetSessionFinalized(true);
+                    UE_LOG(LogTemp, Log, TEXT("[Flush] Merged live pawn telemetry for: %s"), *PS->GetPlayerName());
+                }
+            }
+        }
+
+        // 2. Finalize the persistent collector on all PlayerStates
+        for (TActorIterator<APlayerController> It(World); It; ++It)
+        {
+            APlayerController* PC = *It;
+            if (PC)
+            {
+                AShooterPlayerState* PS = Cast<AShooterPlayerState>(PC->PlayerState);
+                if (PS && PS->TelemetryCollector && !PS->TelemetryCollector->IsSessionFinalized())
+                {
+                    PS->TelemetryCollector->SetPlayerID(PS->GetPlayerName());
+                    PS->TelemetryCollector->FinalizeSession(TelemetryLogger);
+                    UE_LOG(LogTemp, Log, TEXT("[Flush] Finalized persistent telemetry for: %s"), *PS->GetPlayerName());
+                }
+            }
         }
     }
 
@@ -332,16 +442,31 @@ void AShooterGameMode::SetAllPlayersRecording(bool bEnabled)
 {
     if (!GetWorld()) return;
 
+    int32 FoundCollectors = 0;
+
     for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
     {
         APlayerController* PC = It->Get();
-        if (!PC) continue;
+        if (!PC) { UE_LOG(LogTemp, Warning, TEXT("[Recording] PC ist null")); continue; }
+
         APawn* Pawn = PC->GetPawn();
-        if (!Pawn) continue;
+        if (!Pawn) { UE_LOG(LogTemp, Warning, TEXT("[Recording] Kein Pawn für PC: %s"), *PC->GetName()); continue; }
+
         UTelemetryCollector* Collector = Pawn->FindComponentByClass<UTelemetryCollector>();
-        if (Collector)
-            Collector->SetRecordingEnabled(bEnabled);
+        if (!Collector) { UE_LOG(LogTemp, Warning, TEXT("[Recording] Kein TelemetryCollector auf Pawn: %s"), *Pawn->GetName()); continue; }
+
+        if (bEnabled)
+        {
+            if (AShooterPlayerState* PS = PC->GetPlayerState<AShooterPlayerState>())
+                Collector->SetPlayerID(PS->GetPlayerName());
+        }
+
+        Collector->SetRecordingEnabled(bEnabled);
+        FoundCollectors++;
+        UE_LOG(LogTemp, Log, TEXT("[Recording] %s → Collector aktiviert für: %s"), bEnabled ? TEXT("START") : TEXT("STOP"), *Pawn->GetName());
     }
+
+    UE_LOG(LogTemp, Log, TEXT("[Recording] SetAllPlayersRecording(%s) — %d Collectors gefunden"), bEnabled ? TEXT("true") : TEXT("false"), FoundCollectors);
 }
 
 void AShooterGameMode::SetAllPlayersFrozen(bool bFrozen)
@@ -426,21 +551,76 @@ void AShooterGameMode::UpdateLeaderboard()
 
 void AShooterGameMode::OnActorSpawned(AActor* SpawnedActor)
 {
-    ACharacter* Char = Cast<ACharacter>(SpawnedActor);
-    if (!Char) return;
-
-    if (!Char->OnTakeAnyDamage.IsAlreadyBound(this, &AShooterGameMode::OnPawnTakeAnyDamage))
-        Char->OnTakeAnyDamage.AddDynamic(this, &AShooterGameMode::OnPawnTakeAnyDamage);
-
-    // Spieler der während PostGame spawnt direkt einfrieren
-    AShooterGameState* GS = GetShooterGameState();
-    if (GS && GS->GamePhase == EShooterGamePhase::PostGame)
+    // ---- Characters: bind damage delegate + freeze during PostGame ----
+    if (ACharacter* Char = Cast<ACharacter>(SpawnedActor))
     {
-        if (APlayerController* PC = Cast<APlayerController>(Char->GetController()))
+        if (!Char->OnTakeAnyDamage.IsAlreadyBound(this, &AShooterGameMode::OnPawnTakeAnyDamage))
+            Char->OnTakeAnyDamage.AddDynamic(this, &AShooterGameMode::OnPawnTakeAnyDamage);
+
+        AShooterGameState* GS = GetShooterGameState();
+        if (GS && GS->GamePhase == EShooterGamePhase::PostGame)
         {
-            PC->SetIgnoreMoveInput(true);
-            PC->SetIgnoreLookInput(true);
+            if (APlayerController* PC = Cast<APlayerController>(Char->GetController()))
+            {
+                PC->SetIgnoreMoveInput(true);
+                PC->SetIgnoreLookInput(true);
+            }
         }
+        return;
+    }
+
+    // ---- Projectiles: count shots server-side, no Blueprint needed ----
+    // Skip controllers, game-state actors, info actors — only care about world objects
+    // spawned by a player pawn (i.e. projectiles).
+    if (Cast<AController>(SpawnedActor)) return;
+    if (Cast<AInfo>(SpawnedActor))       return;
+
+    // Skip weapon actors (e.g. BP_ShooterWeapon_Rifle_C) — only count actual projectiles/bullets.
+    {
+        FString ClassName = SpawnedActor->GetClass()->GetName();
+        if (ClassName.Contains(TEXT("Weapon"), ESearchCase::IgnoreCase))
+        {
+            UE_LOG(LogTemp, Verbose, TEXT("[Shot] Skipping weapon actor: %s"), *ClassName);
+            return;
+        }
+    }
+
+    AShooterGameState* GS = GetShooterGameState();
+    if (!GS || GS->GamePhase != EShooterGamePhase::InProgress) return;
+
+    // Try GetInstigator() first (set for listen-server host).
+    // For remote-client projectiles the Blueprint Server RPC often leaves Instigator null
+    // but sets Owner to the PlayerController or Pawn — fall back through that chain.
+    APawn* InstigatorPawn = SpawnedActor->GetInstigator();
+    AActor* OwnerActor    = SpawnedActor->GetOwner();
+
+    if (!InstigatorPawn)
+    {
+        if (AController* Ctrl = Cast<AController>(OwnerActor))
+            InstigatorPawn = Ctrl->GetPawn();
+        else
+            InstigatorPawn = Cast<APawn>(OwnerActor);
+    }
+
+    // Always log so we can see exactly what each projectile reports
+    UE_LOG(LogTemp, Log,
+        TEXT("[Shot] Spawned: %s | Instigator: %s | Owner: %s | ResolvedPawn: %s"),
+        *SpawnedActor->GetClass()->GetName(),
+        SpawnedActor->GetInstigator() ? *SpawnedActor->GetInstigator()->GetName() : TEXT("NULL"),
+        OwnerActor                    ? *OwnerActor->GetName()                    : TEXT("NULL"),
+        InstigatorPawn                ? *InstigatorPawn->GetName()                : TEXT("NULL"));
+
+    if (!InstigatorPawn) return;
+
+    UTelemetryCollector* Collector = InstigatorPawn->FindComponentByClass<UTelemetryCollector>();
+    if (Collector)
+    {
+        Collector->RecordShot();
+        UE_LOG(LogTemp, Log, TEXT("[Shot] RecordShot OK → %s"), *InstigatorPawn->GetName());
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[Shot] Kein TelemetryCollector auf Pawn: %s"), *InstigatorPawn->GetName());
     }
 }
 
@@ -463,7 +643,7 @@ void AShooterGameMode::OnPawnTakeAnyDamage(AActor* DamagedActor, float Damage,
     ACharacter* DamagedChar = Cast<ACharacter>(DamagedActor);
     if (DamagedChar)
     {
-        KillerMap.Add(DamagedChar, InstigatorPawn);
+        KillerMap.Add(DamagedChar, InstigatedBy);
         if (!DamagedChar->OnDestroyed.IsAlreadyBound(this, &AShooterGameMode::OnCharacterDestroyed))
             DamagedChar->OnDestroyed.AddDynamic(this, &AShooterGameMode::OnCharacterDestroyed);
     }
@@ -474,18 +654,62 @@ void AShooterGameMode::OnCharacterDestroyed(AActor* DestroyedActor)
     ACharacter* DestroyedChar = Cast<ACharacter>(DestroyedActor);
     if (!DestroyedChar) return;
 
-    APawn** KillerPawnPtr = KillerMap.Find(DestroyedChar);
-    if (!KillerPawnPtr) return;
+    // ---- Opfer: Session sichern BEVOR der Pawn zerstört wird ----
+    // Nur für menschliche Spieler (haben einen PlayerController) — KI-Bots überspringen.
+    if (TelemetryLogger && Cast<APlayerController>(DestroyedChar->GetController()))
+    {
+        UTelemetryCollector* VictimCollector =
+            DestroyedChar->FindComponentByClass<UTelemetryCollector>();
+        if (VictimCollector)
+        {
+            VictimCollector->RecordDeath();
+            AController* VictimCtrl = DestroyedChar->GetController();
+            AShooterPlayerState* PS = VictimCtrl ? Cast<AShooterPlayerState>(VictimCtrl->PlayerState) : nullptr;
+            if (!PS)
+            {
+                PS = Cast<AShooterPlayerState>(DestroyedChar->GetPlayerState());
+            }
+            if (PS && PS->TelemetryCollector && !VictimCollector->IsSessionFinalized())
+            {
+                FString ValidPlayerName = PS->GetPlayerName();
+                if (!ValidPlayerName.IsEmpty() && !ValidPlayerName.StartsWith(TEXT("ShooterPlayerState")))
+                {
+                    VictimCollector->SetPlayerID(ValidPlayerName);
+                }
+                PS->TelemetryCollector->MergeTelemetry(VictimCollector);
+                VictimCollector->SetSessionFinalized(true);
+                UE_LOG(LogTemp, Log, TEXT("[GameMode] Merged telemetry on character destroy for: %s"),
+                    *PS->GetPlayerName());
+            }
+        }
+    }
 
-    APawn* KillerPawn = *KillerPawnPtr;
+    // ---- Killer: Kill zählen ----
+    AController** KillerCtrlPtr = KillerMap.Find(DestroyedChar);
+    if (!KillerCtrlPtr) return;
+
+    AController* KillerCtrl = *KillerCtrlPtr;
     KillerMap.Remove(DestroyedChar);
 
-    if (!KillerPawn) return;
+    if (!KillerCtrl) return;
 
-    UTelemetryCollector* KillerCollector =
-        KillerPawn->FindComponentByClass<UTelemetryCollector>();
-    if (KillerCollector)
-        KillerCollector->RecordKill();
+    // Only credit the kill if the victim was actually being tracked.
+    UTelemetryCollector* VictimCollectorCheck =
+        DestroyedChar->FindComponentByClass<UTelemetryCollector>();
+    if (VictimCollectorCheck && !VictimCollectorCheck->IsRecordingEnabled())
+    {
+        UE_LOG(LogTemp, Warning,
+            TEXT("[GameMode] Kill ignoriert — Opfer %s war nicht aktiv aufgezeichnet (Respawn-Ghost)"),
+            *DestroyedChar->GetName());
+        return;
+    }
+
+    AShooterPlayerState* KillerPS = Cast<AShooterPlayerState>(KillerCtrl->PlayerState);
+    if (KillerPS && KillerPS->TelemetryCollector)
+    {
+        KillerPS->TelemetryCollector->RecordKill();
+        UE_LOG(LogTemp, Warning, TEXT("[GameMode] RecordKill persistent für Killer: %s"), *KillerPS->GetPlayerName());
+    }
 }
 
 // ============================================================

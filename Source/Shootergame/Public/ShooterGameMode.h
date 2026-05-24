@@ -30,6 +30,7 @@ public:
     virtual void PostLogin(APlayerController* NewPlayer) override;
     virtual void Logout(AController* Exiting) override;
     virtual void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) override;
+    virtual void RestartPlayer(AController* NewPlayer) override;
 
     /**
      * Vom Die-Event in BP_ShooterCharacter aufgerufen.
@@ -114,8 +115,8 @@ private:
     UFUNCTION()
     void OnCharacterDestroyed(AActor* DestroyedActor);
 
-    /** Mapped: getroffener Charakter → letzter Angreifer */
-    TMap<ACharacter*, APawn*> KillerMap;
+    /** Mapped: getroffener Charakter → letzter Angreifer Controller */
+    TMap<ACharacter*, AController*> KillerMap;
 
     /** Hilfsfunktion: gibt den ShooterGameState zurück */
     AShooterGameState* GetShooterGameState() const;
