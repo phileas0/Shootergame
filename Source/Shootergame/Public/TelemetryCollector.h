@@ -103,6 +103,10 @@ public:
     bool  IsSessionFinalized() const { return bSessionFinalized; }
     void  SetSessionFinalized(bool bFinalized) { bSessionFinalized = bFinalized; }
 
+    /** Resets the session data back to default values for a new round */
+    UFUNCTION(BlueprintCallable, Category = "Telemetry")
+    void ResetSession();
+
     /** Merges raw telemetry arrays and sums up counters from another collector */
     UFUNCTION(BlueprintCallable, Category = "Telemetry")
     void MergeTelemetry(UTelemetryCollector* SourceCollector);

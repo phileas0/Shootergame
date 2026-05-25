@@ -194,36 +194,45 @@ void UTelemetryCollector::SetRecordingEnabled(bool bEnabled)
 
     if (bEnabled)
     {
-        // Session-Start zurücksetzen damit die Dauer korrekt gemessen wird
+        ResetSession();
         SessionStartTime        = UGameplayStatics::GetTimeSeconds(GetWorld());
-        AccumulatedDuration     = 0.f;
         LastSampleTime          = SessionStartTime;
         LastEnemyCheckTime      = SessionStartTime;
-        bWaitingForReactionShot = false;
-        LastShotTimestamp       = -1.f;
-
-        // Rohdaten löschen (neue Runde)
-        AimAngularSpeeds.Empty();
-        AimAngularErrors.Empty();
-        MovementSpeeds.Empty();
-        MovementAngles.Empty();
-        ReactionTimes.Empty();
-        ShotIntervals.Empty();
-
-        AimFlipCount         = 0;
-        DirectionChangeCount = 0;
-        SpeedViolationCount  = 0;
-        TotalShots           = 0;
-        TotalHits            = 0;
-        TotalHeadshots       = 0;
-        TotalKills           = 0;
-        TotalDeaths          = 0;
-        LastHitTime          = -999.f;
-        bSessionFinalized    = false;
     }
 
     UE_LOG(LogTemp, Log, TEXT("[TelemetryCollector] Recording %s für: %s"),
         bEnabled ? TEXT("aktiviert") : TEXT("deaktiviert"), *PlayerID);
+}
+
+void UTelemetryCollector::ResetSession()
+{
+    bSessionFinalized = false;
+    AccumulatedDuration     = 0.f;
+    SessionStartTime        = 0.f;
+    LastSampleTime          = 0.f;
+    EnemyVisibleTimestamp   = 0.f;
+    bWaitingForReactionShot = false;
+    LastShotTimestamp       = -1.f;
+    LastEnemyCheckTime      = 0.f;
+    AimFlipCount            = 0;
+    DirectionChangeCount    = 0;
+    SpeedViolationCount     = 0;
+
+    AimAngularSpeeds.Empty();
+    AimAngularErrors.Empty();
+    MovementSpeeds.Empty();
+    MovementAngles.Empty();
+    ReactionTimes.Empty();
+    ShotIntervals.Empty();
+
+    TotalShots     = 0;
+    TotalHits      = 0;
+    TotalHeadshots = 0;
+    TotalKills     = 0;
+    TotalDeaths    = 0;
+    LastHitTime    = -999.f;
+
+    UE_LOG(LogTemp, Log, TEXT("[TelemetryCollector] Session zurückgesetzt für: %s"), *PlayerID);
 }
 
 void UTelemetryCollector::RecordShot()

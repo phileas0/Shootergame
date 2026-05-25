@@ -500,7 +500,14 @@ void AShooterGameMode::ResetAllPlayerStats()
         APlayerController* PC = It->Get();
         if (!PC) continue;
         if (AShooterPlayerState* PS = PC->GetPlayerState<AShooterPlayerState>())
+        {
             PS->ResetStats();
+            if (PS->TelemetryCollector)
+            {
+                PS->TelemetryCollector->ResetSession();
+                UE_LOG(LogTemp, Log, TEXT("[GameMode] Reset persistent telemetry for player: %s"), *PS->GetPlayerName());
+            }
+        }
     }
 
     UpdateLeaderboard();
