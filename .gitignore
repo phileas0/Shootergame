@@ -76,3 +76,8 @@ UpgradeLog.htm
 Source/BLUEPRINT_INTEGRATION.md
 BACHELORARBEIT2_VORLAGE.docx
 /BA2
+
+# Python Caches
+__pycache__/
+*.pyc
+

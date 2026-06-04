@@ -4,7 +4,7 @@
 **Projekt:** UE5 Shooter + Python ML Pipeline  
 **GitHub:** https://github.com/phileas0/Shootergame (Branch: vs2022-build-env)  
 **UE Version:** 5.7  
-**Stand:** 08.04.2026
+**Stand:** 04.06.2026
 
 ---
 
@@ -12,6 +12,14 @@
 
 > Jede Änderung an Code, Dateien oder Konfiguration wird hier eingetragen.  
 > Format: Datum | Datei | Was geändert | Warum
+
+### Letzte Änderungen (Projekt-Setup & ML-Pipeline)
+
+| Datum | Datei | Was geändert | Warum |
+|---|---|---|---|
+| 04.06.2026 | `requirements.txt` | [NEW] Abhängigkeitsliste im Root erstellt | Ermöglicht einfache Installation aller Python-Bibliotheken (`numpy`, `pandas`, `matplotlib`, `scikit-learn`, `joblib`) für die ML-Pipeline. |
+| 04.06.2026 | `.gitignore` | Caching-Regeln `__pycache__/` und `*.pyc` hinzugefügt | Hält das Repository frei von temporär kompilierten Python-Dateien. |
+| 04.06.2026 | `ML/*.py` | Umfassende Kommentierung und Quellcode-Dokumentation ergänzt | Verknüpft die Implementierung (Profile, Hyperparameter, Regularisierung, τ*-Verschiebung) direkt mit den Kapiteln der Bachelorarbeit (Kap. 4, 5, 6, 8, 9). |
 
 ---
 

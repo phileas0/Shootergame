@@ -3,6 +3,23 @@ cost_threshold_analysis.py
 ==========================
 Bachelorarbeit – Kap. 9: τ*-Verschiebung bei Kostenasymmetrie
 
+╔══════════════════════════════════════════════════════════════════════════╗
+║  BEZUG ZUR BACHELORARBEIT                                                  ║
+║  ────────────────────────                                                  ║
+║  • Kap. 2.3 (Wahrscheinlichkeitsmodell): Wir modellieren direkt die        ║
+║      Score-Verteilungen P(s|y=0) und P(s|y=1). Die Bayes-Entscheidung      ║
+║      hängt davon ab, wo sich diese Verteilungen überschneiden.             ║
+║  • Kap. 3.2 (Kostenasymmetrie): minimiert wird  E[C] = C_FP·FP + C_FN·FN.  ║
+║  • Kap. 9   (Empirische Evaluation): zeigt, wie τ* mit C_FN/C_FP sinkt.    ║
+║                                                                            ║
+║  UNTERSCHIED zu train_model.py:                                            ║
+║      Dort kamen die Scores aus den trainierten Modellen (LR/RF).           ║
+║      HIER werden die Scores direkt als Beta-Verteilungen simuliert. Das    ║
+║      isoliert den Effekt der Kostenasymmetrie vom konkreten Modell und     ║
+║      macht das Prinzip "τ* wandert bei steigendem C_FN nach links"         ║
+║      modell-unabhängig sichtbar. Beide Wege liefern dieselbe Kernaussage.  ║
+╚══════════════════════════════════════════════════════════════════════════╝
+
 Dieses Skript simuliert realistische Score-Verteilungen beider Klassen
 und zeigt, wie sich der optimale Schwellenwert τ* verschiebt,
 wenn das Kostenverhältnis C_FN/C_FP steigt.
@@ -27,6 +44,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
 
+# Fester SEED → reproduzierbare Score-Verteilungen (siehe auch generate_training_data.py).
 SEED       = 42
 rng        = np.random.default_rng(SEED)
 OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "results")
@@ -37,7 +55,14 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 #    Legitim:  Beta(2, 8)  → Scores häufen sich bei 0.1–0.3
 #    Cheater:  Beta(5, 2)  → Scores häufen sich bei 0.6–0.9
 #    → bewusste Überlappung im Bereich 0.3–0.6 (Grauzone)
+#
+#    Warum Beta-Verteilungen? Ein Klassifikator-Score s(x) liegt immer in
+#    [0,1]. Die Beta-Verteilung lebt genau auf [0,1] und kann durch ihre
+#    zwei Parameter (a, b) leicht "links" (legitim, niedrige Scores) oder
+#    "rechts" (Cheater, hohe Scores) konzentriert werden. Die Ausläufer
+#    sorgen für die realistische Überlappung (= Grauzone, Kap. 7.2/9).
 # ─────────────────────────────────────────────
+# Wieder 95/5-Imbalance (Kap. 5.1), passend zum synthetischen Datensatz.
 N_LEGIT   = 9500
 N_CHEATER =  500
 
@@ -45,6 +70,7 @@ N_CHEATER =  500
 scores_legit   = rng.beta(2, 8, N_LEGIT)      # Modalwert ~0.14, aber Ausläufer bis 0.7
 scores_cheater = rng.beta(5, 2, N_CHEATER)    # Modalwert ~0.80, aber Ausläufer bis 0.3
 
+# Beide Klassen zu einem gemeinsamen Score-/Label-Array zusammenfügen.
 scores = np.concatenate([scores_legit, scores_cheater])
 labels = np.concatenate([np.zeros(N_LEGIT), np.ones(N_CHEATER)])
 
@@ -55,7 +81,10 @@ print(f"\n  Simulierte Score-Verteilung:")
 print(f"  Legitim  (n={N_LEGIT}):  Mean={scores_legit.mean():.3f}, Std={scores_legit.std():.3f}")
 print(f"  Cheater  (n={N_CHEATER}): Mean={scores_cheater.mean():.3f}, Std={scores_cheater.std():.3f}")
 
-# Überlappungszone zeigen
+# Überlappungszone zeigen: Im Bereich [0.3, 0.6] liegen sowohl Legitime als
+# auch Cheater. Diese Beispiele lassen sich durch KEINEN Schwellenwert sauber
+# trennen — jede Wahl von τ erzeugt hier entweder FP oder FN. Das ist genau
+# der Tradeoff, den die Kostenasymmetrie steuert (Kap. 3.2 / 9).
 grey = (scores > 0.3) & (scores < 0.6)
 n_grey_legit   = ((grey) & (labels == 0)).sum()
 n_grey_cheater = ((grey) & (labels == 1)).sum()
@@ -64,25 +93,28 @@ print(f"  → Diese können nicht ohne Tradeoff getrennt werden.\n")
 
 # ─────────────────────────────────────────────
 # 2. τ*-Analyse über Kostenverhältnisse
+#    Für jedes Verhältnis C_FN/C_FP: feines τ-Raster durchsuchen und das
+#    kostenminimale τ* bestimmen (Brute-Force argmin – einfach & exakt).
 # ─────────────────────────────────────────────
 cost_ratios = [1, 2, 5, 10, 20, 50]
-thresholds  = np.round(np.arange(0.01, 1.0, 0.01), 2)
+thresholds  = np.round(np.arange(0.01, 1.0, 0.01), 2)   # 0.01-Schritte = feine Auflösung
 
 results = []
 for ratio in cost_ratios:
     C_FP = 1
-    C_FN = ratio
+    C_FN = ratio            # FN ist 'ratio'-mal so teuer wie FP
     best_tau  = None
     best_cost = np.inf
     best_fp   = 0
     best_fn   = 0
 
     for tau in thresholds:
+        # s(x) ≥ τ → als Cheater einstufen.
         y_pred = (scores >= tau).astype(int)
         cm = confusion_matrix(labels, y_pred, labels=[0, 1])
         tn, fp, fn, tp = cm.ravel()
-        cost = C_FP * fp + C_FN * fn
-        if cost < best_cost:
+        cost = C_FP * fp + C_FN * fn       # Zielfunktion (Kap. 3.2)
+        if cost < best_cost:               # bestes (= günstigstes) τ merken
             best_cost = cost
             best_tau  = tau
             best_fp   = fp
@@ -97,6 +129,8 @@ for ratio in cost_ratios:
     })
 
 df_res = pd.DataFrame(results)
+# Erwartetes Muster: je größer C_FN/C_FP, desto kleiner τ* (man bannt im
+# Zweifel früher), desto weniger FN — aber mehr FP. Genau die Kernaussage.
 print("  τ* je Kostenverhältnis:\n")
 print(df_res.to_string(index=False))
 
@@ -106,6 +140,8 @@ print(f"\n→ CSV gespeichert: {csv_path}")
 
 # ─────────────────────────────────────────────
 # 3. Vollständige Kosten-Kurve für ausgewählte Verhältnisse
+#    Hier merken wir nicht nur das Minimum, sondern die ganze Kosten(τ)-Kurve,
+#    um in Plot 3 zu zeigen, WIE das Minimum mit dem Kostenverhältnis wandert.
 # ─────────────────────────────────────────────
 cost_curves = {}
 for ratio in cost_ratios:
@@ -118,14 +154,14 @@ for ratio in cost_ratios:
     cost_curves[ratio] = costs
 
 # ─────────────────────────────────────────────
-# 4. Plots
+# 4. Plots  (drei Abbildungen für Kap. 9)
 # ─────────────────────────────────────────────
 fig, axes = plt.subplots(1, 3, figsize=(18, 5))
 fig.suptitle("τ*-Verschiebung bei steigender Kostenasymmetrie (C_FN > C_FP)\n"
              "Bachelorarbeit – Kap. 9: Empirische Evaluation",
              fontsize=12)
 
-# ── Plot 1: Score-Verteilungen ──
+# ── Plot 1: Score-Verteilungen ── (visualisiert die Grauzone / Kap. 2.3)
 ax = axes[0]
 ax.hist(scores_legit,   bins=50, alpha=0.6, color="steelblue", label="Legitim (Label=0)",  density=True)
 ax.hist(scores_cheater, bins=50, alpha=0.6, color="tomato",    label="Cheater (Label=1)", density=True)
@@ -136,12 +172,12 @@ ax.set_title("Score-Verteilungen beider Klassen")
 ax.legend(fontsize=8)
 ax.grid(True, alpha=0.3)
 
-# ── Plot 2: τ* vs. Kostenverhältnis ──
+# ── Plot 2: τ* vs. Kostenverhältnis ── (die Kern-Abbildung der Forschungsfrage)
 ax = axes[1]
 tau_values = df_res["τ*"].values
 ratio_vals = df_res["C_FN/C_FP"].values
 ax.plot(ratio_vals, tau_values, "o-", color="darkblue", linewidth=2.5, markersize=9)
-ax.axhline(0.5, color="gray", linestyle="--", alpha=0.5, label="Standard τ=0.5")
+ax.axhline(0.5, color="gray", linestyle="--", alpha=0.5, label="Standard τ=0.5")  # naiver Default
 for r, t in zip(ratio_vals, tau_values):
     ax.annotate(f"τ*={t:.2f}", (r, t), textcoords="offset points",
                 xytext=(6, 4), fontsize=8)
@@ -150,18 +186,20 @@ ax.set_ylabel("Optimaler Schwellenwert τ*")
 ax.set_title("Verschiebung von τ* bei steigender\nKostenasymmetrie")
 ax.set_xscale("log")
 ax.set_xticks(cost_ratios)
-ax.set_xticklabels([f"1:{r}" for r in cost_ratios])
+ax.set_xticklabels([f"{r}:1" for r in cost_ratios])
 ax.set_ylim(0, 0.8)
 ax.legend(fontsize=8)
 ax.grid(True, alpha=0.3)
 
 # ── Plot 3: Kosten-Kurven für 3 Verhältnisse ──
+# Zeigt für 1:1, 5:1, 20:1 die gesamte Kosten(τ)-Kurve; die gestrichelte Linie
+# markiert jeweils das Minimum τ*. Man sieht direkt: höheres C_FN → Minimum links.
 ax = axes[2]
 colors = {1: "steelblue", 5: "darkorange", 20: "tomato"}
 for ratio in [1, 5, 20]:
     costs = cost_curves[ratio]
     opt_idx = np.argmin(costs)
-    ax.plot(thresholds, costs, label=f"C_FN/C_FP = 1:{ratio}", color=colors[ratio])
+    ax.plot(thresholds, costs, label=f"C_FN/C_FP = {ratio}:1", color=colors[ratio])
     ax.axvline(thresholds[opt_idx], color=colors[ratio], linestyle="--", alpha=0.6)
 ax.set_xlabel("Threshold τ")
 ax.set_ylabel("Gesamtkosten  C_FP·FP + C_FN·FN")

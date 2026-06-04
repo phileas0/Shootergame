@@ -1,0 +1,12 @@
+# Python-Abhängigkeiten für die ML-Pipeline (Cheat-Erkennung)
+# Installation per: pip install -r requirements.txt
+
+numpy
+pandas
+matplotlib
+scikit-learn
+joblib
+
+# Optionale Abhängigkeiten für den geplanten FastAPI-Inferenz-Server
+# fastapi
+# uvicorn
