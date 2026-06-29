@@ -1,3 +1,15 @@
+// TelemetryCollector.cpp
+// ════════════════════════════════════════════════════════════════════════
+//  BEZUG ZUR BACHELORARBEIT
+//  ────────────────────────
+//  Diese Datei ist der "Sensor" des Systems. Sie tastet während des Spiels
+//  laufend das Verhalten ab (Aim, Movement, Timing) und verdichtet es am Ende
+//  zum Feature-Vektor x ∈ R^n (Kap. 2.1). Die zentrale Idee der Arbeit steckt
+//  in den StdDev-Features: menschliches Verhalten streut, maschinelles (Bot)
+//  ist fast konstant (StdDev ≈ 0) → das trennbare Signal (Kap. 7).
+//  Alles läuft serverseitig (HasAuthority), daher manipulationsresistent (Kap. 1.1).
+// ════════════════════════════════════════════════════════════════════════
+
 #include "TelemetryCollector.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -25,16 +37,16 @@ UTelemetryCollector::UTelemetryCollector()
 
     // Standardwerte für eine frische Session
     PlayerID  = TEXT("Unknown");
-    Label     = 0; // 0 = Legitim, 1 = Cheater (wichtig für die ML-Trainingsdaten)
+    Label     = 0; // 0 = Legitim, 1 = Cheater (wichtig für die ML-Trainingsdaten; = y, Kap. 2.2)
 
     // Initialisierung aller Timer und Zustände
     SessionStartTime        = 0.f;
     LastSampleTime          = 0.f;
     EnemyVisibleTimestamp   = 0.f;
     bWaitingForReactionShot = false;
-    LastShotTimestamp       = -1.f;
+    LastShotTimestamp       = -1.f;  // -1 = "noch kein Schuss" → erstes ShotInterval wird nicht verfälscht
     LastEnemyCheckTime      = 0.f;
-    
+
     // Zähler auf 0 setzen
     AimFlipCount            = 0;
     DirectionChangeCount    = 0;
@@ -50,7 +62,9 @@ void UTelemetryCollector::BeginPlay()
 {
     Super::BeginPlay();
 
-    // Wir sammeln Daten nur auf dem Server (Authority), damit Clients die Daten nicht manipulieren können.
+    // ⚑ Kap. 1.1 (Systemabgrenzung): Wir sammeln Daten nur auf dem Server (Authority),
+    //    damit Clients die Daten nicht manipulieren können. Das ist die technische
+    //    Kernbedingung der ganzen Arbeit — verhaltensbasiert UND serverseitig.
     if (GetOwner() && GetOwner()->HasAuthority())
     {
         // Startzeitpunkte festhalten
@@ -65,8 +79,9 @@ void UTelemetryCollector::BeginPlay()
             LastMoveDirection = Owner->GetActorForwardVector();
 
             // Ganz wichtiger Trick: Wir binden das OnTakeAnyDamage Event direkt hier im Collector an den Spieler.
-            // Sobald dieser Charakter Schaden ERHÄLT, feuert OnOwnerTakeAnyDamage. 
+            // Sobald dieser Charakter Schaden ERHÄLT, feuert OnOwnerTakeAnyDamage.
             // So können wir tracken, WER auf uns geschossen hat, ohne den Code im fremden Charakter anfassen zu müssen.
+            // (Redundant zur Bindung im GameMode — doppelte Sicherheit, der IsAlreadyBound-Check verhindert Doppelzählung.)
             if (!Owner->OnTakeAnyDamage.IsAlreadyBound(this, &UTelemetryCollector::OnOwnerTakeAnyDamage))
             {
                 Owner->OnTakeAnyDamage.AddDynamic(this, &UTelemetryCollector::OnOwnerTakeAnyDamage);
@@ -78,6 +93,7 @@ void UTelemetryCollector::BeginPlay()
     else
     {
         // Auf den Clients schalten wir den Tick komplett ab, um Performance zu sparen.
+        // (Auf dem Client gäbe es ohnehin keine vertrauenswürdigen Daten — siehe Kap. 1.1.)
         PrimaryComponentTick.bCanEverTick = false;
     }
 }
@@ -88,7 +104,7 @@ void UTelemetryCollector::TickComponent(float DeltaTime, ELevelTick TickType,
     Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
     ACharacter* Owner = Cast<ACharacter>(GetOwner());
-    if (!Owner || !Owner->HasAuthority()) return;
+    if (!Owner || !Owner->HasAuthority()) return;   // erneuter Server-Check (Sicherheit)
 
     float Now = UGameplayStatics::GetTimeSeconds(GetWorld());
 
@@ -96,18 +112,20 @@ void UTelemetryCollector::TickComponent(float DeltaTime, ELevelTick TickType,
     // 1. AIM-DATEN SAMMELN (Mausbewegungen)
     // ==========================================
     FVector CurrentViewDir = Owner->GetBaseAimRotation().Vector();
-    CurrentViewDir.Normalize();
+    CurrentViewDir.Normalize();   // Einheitsvektor → DotProduct liefert sauberen Cosinus
 
     // Wir berechnen den Winkel zwischen dem letzten und dem aktuellen Frame.
     // Das DotProduct liefert uns den Cosinus des Winkels, Acos wandelt es in den Bogenmaß-Winkel um.
+    // Clamp(-1,1) verhindert NaN durch Rundungsfehler (Acos ist nur auf [-1,1] definiert).
     float AngleDelta = FMath::Acos(
         FMath::Clamp(FVector::DotProduct(LastViewDirection, CurrentViewDir), -1.f, 1.f)
     );
     float AngleDeltaDeg = FMath::RadiansToDegrees(AngleDelta);
-    
+
     // Winkeländerung pro Sekunde (Winkelgeschwindigkeit). Aimbots haben hier oft unrealistisch konstante oder sprunghafte Werte.
+    // Max(DeltaTime, KINDA_SMALL_NUMBER) verhindert Division durch 0.
     float AngularSpeed  = AngleDeltaDeg / FMath::Max(DeltaTime, KINDA_SMALL_NUMBER);
-    AimAngularSpeeds.Add(AngularSpeed);
+    AimAngularSpeeds.Add(AngularSpeed);   // → wird zu AimAngularSpeedMean/StdDev (x_i, Kap. 2.1)
 
     // Ein "Flip" passiert, wenn der Spieler sich in einem Bruchteil einer Sekunde um mehr als 90 Grad dreht.
     // Ein Mensch macht das in der Regel nicht präzise im Gefecht, ein Aimbot, der auf ein Ziel hinter sich aufschaltet, schon.
@@ -115,7 +133,7 @@ void UTelemetryCollector::TickComponent(float DeltaTime, ELevelTick TickType,
     {
         AimFlipCount++;
     }
-    LastViewDirection = CurrentViewDir;
+    LastViewDirection = CurrentViewDir;   // für das nächste Delta merken
 
     // ==========================================
     // 2. MOVEMENT-DATEN SAMMELN (Tastatureingaben/Laufen)
@@ -123,23 +141,24 @@ void UTelemetryCollector::TickComponent(float DeltaTime, ELevelTick TickType,
     UCharacterMovementComponent* Movement = Owner->GetCharacterMovement();
     if (Movement)
     {
-        float Speed = Movement->Velocity.Size();
+        float Speed = Movement->Velocity.Size();   // Betrag des Geschwindigkeitsvektors (cm/s)
         MovementSpeeds.Add(Speed);
 
         // Wir tolerieren +10cm/s wegen Physik-Jitter. Wenn er schneller ist, verbuchen wir das als Speedhack-Vorfalls.
+        // → SpeedViolationCount wird später zu SpeedViolationRatio (Haupt-Speedhack-Feature).
         if (Speed > MaxLegalSpeed + 10.f)
         {
             SpeedViolationCount++;
         }
 
         FVector CurrentMoveDir = Movement->Velocity;
-        if (CurrentMoveDir.SizeSquared() > 1.f) // Nur messen, wenn wir uns auch wirklich bewegen
+        if (CurrentMoveDir.SizeSquared() > 1.f) // Nur messen, wenn wir uns auch wirklich bewegen (Stillstand würde Winkel verfälschen)
         {
             CurrentMoveDir.Normalize();
             float MoveAngleDelta = FMath::Acos(
                 FMath::Clamp(FVector::DotProduct(LastMoveDirection, CurrentMoveDir), -1.f, 1.f)
             );
-            
+
             // Plötzliche Richtungswechsel (>45 Grad) aufzeichnen. Zick-Zack-Muster können auf Bots/Scripts hindeuten.
             if (FMath::RadiansToDegrees(MoveAngleDelta) > 45.f)
             {
@@ -147,6 +166,7 @@ void UTelemetryCollector::TickComponent(float DeltaTime, ELevelTick TickType,
             }
 
             // Gesamte Bewegungsrichtung speichern für die Entropy-Berechnung (Unvorhersehbarkeit des Pfades).
+            // Atan2 liefert den Heading-Winkel; +180 verschiebt ihn nach [0,360] (positiv für die Histogramm-Bins).
             float HeadingAngle = FMath::Atan2(CurrentMoveDir.Y, CurrentMoveDir.X);
             MovementAngles.Add(FMath::RadiansToDegrees(HeadingAngle) + 180.f);
             LastMoveDirection = CurrentMoveDir;
@@ -173,13 +193,14 @@ void UTelemetryCollector::RecordShot()
 
     // Zeit seit dem letzten Schuss speichern. Extrem wichtig für die Erkennung von Triggerbots!
     // Triggerbots schießen exakt im selben Millisekunden-Takt, Menschen haben immer eine kleine Abweichung.
-    if (LastShotTimestamp > 0.f)
+    // → ShotIntervals wird zu ShotIntervalStdDev; bei Bots nahe 0 (vgl. generate_training_data.py gen_triggerbot).
+    if (LastShotTimestamp > 0.f)   // erst ab dem zweiten Schuss gibt es ein Intervall
     {
         ShotIntervals.Add(Now - LastShotTimestamp);
     }
     LastShotTimestamp = Now;
 
-    // Falls ein Feind ins Sichtfeld gerückt ist und wir auf den ersten Schuss warten, 
+    // Falls ein Feind ins Sichtfeld gerückt ist und wir auf den ersten Schuss warten,
     // ist das genau jetzt passiert. Reaktionszeit stoppen!
     if (bWaitingForReactionShot)
     {
@@ -218,6 +239,8 @@ void UTelemetryCollector::RecordEnemyVisible()
 {
     // Diese Funktion wird vom LineTrace (CheckEnemyLineOfSight) aufgerufen.
     // Wenn wir nicht ohnehin schon auf einen Schuss warten, fangen wir jetzt an, die Zeit zu stoppen.
+    // Der bWaitingForReactionShot-Guard verhindert, dass die Stoppuhr ständig neu startet,
+    // solange derselbe Gegner sichtbar bleibt (sonst würde die Reaktionszeit künstlich klein).
     if (!bWaitingForReactionShot)
     {
         EnemyVisibleTimestamp   = UGameplayStatics::GetTimeSeconds(GetWorld());
@@ -230,9 +253,11 @@ void UTelemetryCollector::RecordFirstShotAfterVisible()
     if (!bWaitingForReactionShot) return;
 
     // Der Schuss fiel! Die Reaktionszeit ist die Differenz zwischen "Gegner taucht auf" und "Schuss gelöst".
+    // → ReactionTimes wird zu ReactionTimeMean/StdDev. Aimbots: sehr kurz UND sehr konstant (StdDev≈0).
     float ReactionTime = UGameplayStatics::GetTimeSeconds(GetWorld()) - EnemyVisibleTimestamp;
-    
-    // Sanity-Check: Ignoriere offensichtlichen Quatsch (z.B. über 5 Sekunden)
+
+    // Sanity-Check: Ignoriere offensichtlichen Quatsch (z.B. über 5 Sekunden).
+    // Solche Ausreißer würden Mean/StdDev verzerren → bewusst herausfiltern (saubere Feature-Definition).
     if (ReactionTime <= 5.f && ReactionTime >= 0.f)
     {
         ReactionTimes.Add(ReactionTime);
@@ -247,18 +272,21 @@ void UTelemetryCollector::SetPlayerID(const FString& InPlayerID)
 
 void UTelemetryCollector::SetLabel(int32 InLabel)
 {
-    // Dient nur für die Trainingsdatengenerierung: 0 = Normaler Spieler, 1 = Cheater
+    // Dient nur für die Trainingsdatengenerierung: 0 = Normaler Spieler, 1 = Cheater (= y, Kap. 2.2)
     Label = InLabel;
 }
 
 void UTelemetryCollector::FinalizeSession(UTelemetryLogger* Logger)
 {
+    // ⚑ KERNFUNKTION: Hier wird aus den Roh-Arrays der fertige Feature-Vektor x ∈ R^n
+    //    gebaut (Kap. 2.1). Das Ergebnis ist genau eine Zeile des Trainings-/Test-Datensatzes.
     if (!Logger) return;
 
     float Now             = UGameplayStatics::GetTimeSeconds(GetWorld());
     float SessionDuration = Now - SessionStartTime;
 
     // Kurze Sessions (unter 1 Sekunde) ignorieren wir, da sie keine aussagekräftigen ML-Features liefern.
+    // (Zu wenige Samples → Mean/StdDev statistisch wertlos.)
     if (SessionDuration < 1.f)
     {
         UE_LOG(LogTemp, Warning, TEXT("[TelemetryCollector] Session too short (<1s), skipping: %s"), *PlayerID);
@@ -266,6 +294,7 @@ void UTelemetryCollector::FinalizeSession(UTelemetryLogger* Logger)
     }
 
     // Wir füllen jetzt unsere finale Struktur, die später in die CSV-Datei geschrieben wird.
+    // FPlayerSessionData ist die formale Repräsentation von x (definiert in TelemetryLogger.h).
     FPlayerSessionData Data;
     Data.PlayerID               = PlayerID;
     Data.Label                  = Label;
@@ -284,7 +313,7 @@ void UTelemetryCollector::FinalizeSession(UTelemetryLogger* Logger)
     Data.AimAngularErrorMean    = AimErrMean;
     Data.AimAngularErrorStdDev  = ComputeStdDev(AimAngularErrors, AimErrMean);
 
-    int32 TotalSamples          = FMath::Max(AimAngularSpeeds.Num(), 1);
+    int32 TotalSamples          = FMath::Max(AimAngularSpeeds.Num(), 1);  // Max(...,1) verhindert Division durch 0
     Data.AimFlipRatio           = (float)AimFlipCount / (float)TotalSamples; // Wie oft wurden harte >90-Grad-Drehungen gemacht?
 
     // ==========================================
@@ -295,7 +324,7 @@ void UTelemetryCollector::FinalizeSession(UTelemetryLogger* Logger)
     Data.MovementSpeedMax       = MovementSpeeds.Num() > 0
                                   ? *Algo::MaxElement(MovementSpeeds) : 0.f; // Max-Wert der Geschwindigkeit raussuchen
 
-    // Wie oft pro Sekunde ändert der Spieler abrupt die Richtung?
+    // Wie oft pro Sekunde ändert der Spieler abrupt die Richtung?  (normiert auf die Sessiondauer → vergleichbar)
     Data.DirectionChangesPerSecond = SessionDuration > 0.f
                                      ? (float)DirectionChangeCount / SessionDuration : 0.f;
 
@@ -320,11 +349,12 @@ void UTelemetryCollector::FinalizeSession(UTelemetryLogger* Logger)
     // ==========================================
     // 4. RATE FEATURES BERECHNEN
     // ==========================================
+    // Quoten statt Rohzahlen → unabhängig von der Sessiondauer, fair vergleichbar zwischen Spielern.
     Data.HitRate        = TotalShots > 0 ? (float)TotalHits / (float)TotalShots : 0.f;
     Data.HeadshotRate   = TotalHits  > 0 ? (float)TotalHeadshots / (float)TotalHits : 0.f;
     Data.KillsPerMinute = SessionDuration > 0.f
                           ? (float)TotalKills / (SessionDuration / 60.f) : 0.f;
-    
+
     // K/D Ratio berechnen. Wir lassen Fallback auf TotalKills, um Division durch 0 bei perfekten Runden zu vermeiden.
     Data.KillDeathRatio = TotalDeaths > 0
                           ? (float)TotalKills / (float)TotalDeaths : (float)TotalKills;
@@ -334,7 +364,7 @@ void UTelemetryCollector::FinalizeSession(UTelemetryLogger* Logger)
     Data.TotalKills  = TotalKills;
     Data.TotalDeaths = TotalDeaths;
 
-    // Session an den Logger übergeben, der sie dann später in die CSV pumpt
+    // Session an den Logger übergeben, der sie dann später in die CSV pumpt (→ ein Datenpunkt für das ML-Modell).
     Logger->LogSessionData(Data);
 
     UE_LOG(LogTemp, Log,
@@ -352,14 +382,14 @@ void UTelemetryCollector::OnOwnerTakeAnyDamage(AActor* DamagedActor, float Damag
 {
     // Zur Erinnerung: Diese Funktion läuft auf dem OPFER, wenn es getroffen wird.
     // Wir wollen aber Hit-Stats für den SCHÜTZEN aufzeichnen.
-    
+
     // Nur tracken, wenn jemand anderes den Schaden verursacht hat und der Schaden > 0 ist.
     if (!InstigatedBy || Damage <= 0.f) return;
 
     APawn* InstigatorPawn = InstigatedBy->GetPawn();
     if (!InstigatorPawn) return;
 
-    // Suizid oder Eigenschaden ausklammern
+    // Suizid oder Eigenschaden ausklammern (würde HitRate künstlich aufblähen).
     if (InstigatorPawn == GetOwner()) return;
 
     // Wir suchen uns nun den TelemetryCollector des SCHÜTZEN (Instigator).
@@ -367,7 +397,7 @@ void UTelemetryCollector::OnOwnerTakeAnyDamage(AActor* DamagedActor, float Damag
     // - Wenn der Schütze ein Spieler ist, rufen wir auf SEINEM Collector RecordHit auf.
     UTelemetryCollector* ShooterCollector =
         InstigatorPawn->FindComponentByClass<UTelemetryCollector>();
-        
+
     if (ShooterCollector)
     {
         ShooterCollector->RecordHit(false);
@@ -395,7 +425,7 @@ void UTelemetryCollector::CheckEnemyLineOfSight()
     FCollisionQueryParams Params;
     Params.AddIgnoredActor(Owner); // Uns selbst ignorieren, sonst treffen wir den eigenen Kopf
 
-    // Strahl abfeuern
+    // Strahl abfeuern. ECC_Pawn = wir reagieren nur auf Spielfiguren, nicht auf Wände/Deko.
     bool bHit = World->LineTraceSingleByChannel(
         HitResult,
         StartLocation,
@@ -429,10 +459,12 @@ bool UTelemetryCollector::IsHeadshotBone(FName BoneName) const
 // ------------------------------------------
 // MATHEMATISCHE FUNKTIONEN FÜR ML-FEATURES
 // ------------------------------------------
+// Diese drei Funktionen sind die eigentliche Feature-Extraktion (Kap. 2.1):
+// sie verdichten je ein Roh-Array zu einer Zahl, die ins CSV/zum Modell geht.
 
 float UTelemetryCollector::ComputeMean(const TArray<float>& Values) const
 {
-    // Berechnet den simplen arithmetischen Durchschnitt.
+    // Berechnet den simplen arithmetischen Durchschnitt:  μ = (1/N) · Σ x_i
     if (Values.Num() == 0) return 0.f;
     float Sum = 0.f;
     for (float V : Values) Sum += V;
@@ -441,9 +473,12 @@ float UTelemetryCollector::ComputeMean(const TArray<float>& Values) const
 
 float UTelemetryCollector::ComputeStdDev(const TArray<float>& Values, float Mean) const
 {
-    // Berechnet die Standardabweichung (Varianz). 
-    // Sehr wichtig für ML: Zeigt auf, wie stark die Werte um den Durchschnitt schwanken.
-    // Maschinelle Cheats (Aimbots, Macros) haben meist eine StdDev nahe 0 (keine menschliche Streuung).
+    // Berechnet die Standardabweichung (Wurzel der Varianz):  σ = sqrt( (1/N) · Σ (x_i − μ)² )
+    // ⚑ Kap. 7 (Adversarial): DAS diskriminativste Feature überhaupt. Sehr wichtig für ML:
+    //   Zeigt, wie stark die Werte um den Durchschnitt schwanken.
+    //   Maschinelle Cheats (Aimbots, Macros) haben meist eine StdDev nahe 0 (keine menschliche Streuung).
+    // Hinweis: <2 Werte → 0 (Streuung ist erst ab 2 Messpunkten definiert). Es wird die
+    //   Populations-Varianz (Teiler N) verwendet, konsistent mit der Datengenerierung.
     if (Values.Num() < 2) return 0.f;
     float Variance = 0.f;
     for (float V : Values) Variance += (V - Mean) * (V - Mean);
@@ -454,10 +489,11 @@ float UTelemetryCollector::ComputeEntropy(const TArray<float>& Values, int32 Num
 {
     // Shannon-Entropie berechnet die Unvorhersehbarkeit (z.B. des Laufweges).
     // Wir werfen die Bewegungswinkel in Bins ("Körbe") und schauen, wie gleichmäßig sie verteilt sind.
-    // Jemand, der nur stumpf geradeaus (W+Shift) läuft, hat eine Entropie nahe 0. 
+    // Jemand, der nur stumpf geradeaus (W+Shift) läuft, hat eine Entropie nahe 0.
     // Jemand, der natürlich und komplex navigiert, hat eine höhere Entropie.
     if (Values.Num() == 0) return 0.f;
 
+    // 1) Wertebereich [Min, Max] bestimmen (für die Bin-Grenzen).
     float MinVal = Values[0], MaxVal = Values[0];
     for (float V : Values)
     {
@@ -466,27 +502,27 @@ float UTelemetryCollector::ComputeEntropy(const TArray<float>& Values, int32 Num
     }
 
     float Range = MaxVal - MinVal;
-    if (Range < KINDA_SMALL_NUMBER) return 0.f;
+    if (Range < KINDA_SMALL_NUMBER) return 0.f;   // alle Werte gleich → keine Streuung → Entropie 0
 
     TArray<int32> Bins;
-    Bins.SetNumZeroed(NumBins);
+    Bins.SetNumZeroed(NumBins);   // NumBins leere Körbe anlegen
 
-    // Werte in das Histogramm einsortieren
+    // 2) Werte in das Histogramm einsortieren (Wert → Bin-Index)
     for (float V : Values)
     {
         int32 BinIdx = FMath::Clamp(
             (int32)(((V - MinVal) / Range) * NumBins),
-            0, NumBins - 1
+            0, NumBins - 1   // Clamp fängt den Randfall V==MaxVal ab (sonst Index == NumBins)
         );
         Bins[BinIdx]++;
     }
 
-    // Formel: - Summe( p * log2(p) )
+    // 3) Shannon-Formel:  H = − Σ p · log2(p)   mit  p = Anteil der Werte im Bin
     float Entropy = 0.f;
     float N = (float)Values.Num();
     for (int32 Count : Bins)
     {
-        if (Count > 0)
+        if (Count > 0)   // log2(0) ist undefiniert → leere Bins überspringen
         {
             float P = (float)Count / N;
             Entropy -= P * FMath::Log2(P);

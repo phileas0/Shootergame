@@ -1,11 +1,22 @@
+// TelemetryLogger.cpp
+// ════════════════════════════════════════════════════════════════════════
+//  BEZUG ZUR BACHELORARBEIT
+//  ────────────────────────
+//  Persistenz-Schicht der serverseitigen Datenerhebung (Kap. 8.1). Sammelt die
+//  fertigen Feature-Vektoren x (FPlayerSessionData, Kap. 2.1) im RAM und schreibt
+//  sie als CSV. Diese CSV ist die reale Datenquelle der ML-Pipeline — ihr Schema
+//  (Spalten/Reihenfolge) muss exakt dem der synthetischen Daten entsprechen,
+//  damit train_model.py dieselben Features sieht.
+// ════════════════════════════════════════════════════════════════════════
+
 #include "TelemetryLogger.h"
-#include "Misc/FileHelper.h"
-#include "Misc/Paths.h"
-#include "HAL/FileManager.h"
+#include "Misc/FileHelper.h"   // FFileHelper::SaveStringToFile
+#include "Misc/Paths.h"        // FPaths (Projekt-/Speicherpfade)
+#include "HAL/FileManager.h"   // IFileManager (Verzeichnis anlegen, Datei prüfen)
 
 UTelemetryLogger::UTelemetryLogger()
 {
-    // Der Logger wird als einfaches UObject betrieben. 
+    // Der Logger wird als einfaches UObject betrieben.
     // Hier ist beim Start keine spezielle Initialisierung nötig.
 }
 
@@ -13,6 +24,7 @@ void UTelemetryLogger::LogSessionData(const FPlayerSessionData& SessionData)
 {
     // Wir schreiben nicht jeden Datensatz einzeln sofort auf die Festplatte (das würde extrem ruckeln/haken).
     // Stattdessen packen wir die fertige Session erst mal in unseren Arbeitsspeicher-Puffer (SessionBuffer).
+    // → "Batching": viele Sessions sammeln, dann in einem Rutsch schreiben (Performance, Kap. 8.1).
     SessionBuffer.Add(SessionData);
     UE_LOG(LogTemp, Log, TEXT("[TelemetryLogger] Session buffered for player: %s (Buffer size: %d)"),
            *SessionData.PlayerID, SessionBuffer.Num());
@@ -35,8 +47,9 @@ void UTelemetryLogger::FlushToCSV(const FString& Filename)
     // Falls der Ordner "Telemetry" noch nicht existiert, legt die Engine ihn hier automatisch an.
     IFileManager::Get().MakeDirectory(*SaveDir, true);
 
-    // Wir prüfen, ob die Datei schon existiert. 
+    // Wir prüfen, ob die Datei schon existiert.
     // Wenn ja, wollen wir die CSV-Kopfzeile (Spaltennamen) NICHT noch einmal reinschreiben.
+    // → sonst stünde der Header mitten in den Daten und Python würde diese Zeile als "Spieler" fehlinterpretieren.
     bool bFileExists = IFileManager::Get().FileExists(*FilePath);
 
     FString Output;
@@ -48,7 +61,7 @@ void UTelemetryLogger::FlushToCSV(const FString& Filename)
     }
 
     // Nun iterieren wir über alle gebufferten Datensätze (z.B. alle Spieler am Ende einer Runde)
-    // und konvertieren sie in kommaseparierten Text (CSV-Zeilen).
+    // und konvertieren sie in kommaseparierten Text (CSV-Zeilen). Jede Zeile = ein x ∈ R^n (Kap. 2.1).
     for (const FPlayerSessionData& Session : SessionBuffer)
     {
         Output += SessionToCSVRow(Session) + TEXT("\n");
@@ -56,6 +69,7 @@ void UTelemetryLogger::FlushToCSV(const FString& Filename)
 
     // Jetzt schreiben wir den ganzen Batzen auf einmal auf die Festplatte.
     // 'FILEWRITE_Append' sorgt dafür, dass wir bei einer existierenden Datei die neuen Zeilen unten anhängen.
+    // → so wächst der Datensatz über mehrere Runden hinweg, statt überschrieben zu werden.
     if (FFileHelper::SaveStringToFile(Output, *FilePath,
         FFileHelper::EEncodingOptions::AutoDetect,
         &IFileManager::Get(),
@@ -76,7 +90,7 @@ void UTelemetryLogger::FlushToCSV(const FString& Filename)
 
 void UTelemetryLogger::ClearBuffer()
 {
-    // Leert das Array komplett.
+    // Leert das Array komplett (gibt den RAM frei).
     SessionBuffer.Empty();
 }
 
@@ -90,13 +104,17 @@ FString UTelemetryLogger::GetSaveDirectory()
 {
     // FPaths::ProjectSavedDir() verweist standardmäßig auf "DeinProjekt/Saved/".
     // Hier legen wir unseren dedizierten ML-Trainingsdaten-Ordner an.
+    // → Ergebnis-Pfad: Saved/Telemetry/  (vgl. Memory/Doku: session_<timestamp>.csv landet hier)
     return FPaths::ProjectSavedDir() + TEXT("Telemetry/");
 }
 
 FString UTelemetryLogger::GetCSVHeader()
 {
-    // Dies ist die erste Zeile der CSV-Datei. 
-    // Sie MUSS exakt mit den Spalten in unserem Python ML-Skript (generate_training_data.py) übereinstimmen!
+    // Dies ist die erste Zeile der CSV-Datei.
+    // ⚑ Sie MUSS exakt mit den Spalten in unserem Python ML-Skript (generate_training_data.py)
+    //   übereinstimmen — gleiche Namen, gleiche Reihenfolge. Diese Reihenfolge definiert
+    //   die Indizierung des Feature-Vektors x (Kap. 2.1). Die 4 Gruppen (Aim/Movement/Timing/Rate)
+    //   entsprechen den Feature-Klassen aus Kap. 2.1.
     return TEXT(
         "PlayerID,"
         "SessionDurationSeconds,"
@@ -127,7 +145,7 @@ FString UTelemetryLogger::GetCSVHeader()
         "TotalHits,"
         "TotalKills,"
         "TotalDeaths,"
-        // Label
+        // Label  (= y ∈ {0,1}, Kap. 2.2)
         "Label"
     );
 }
@@ -136,7 +154,9 @@ FString UTelemetryLogger::SessionToCSVRow(const FPlayerSessionData& D)
 {
     // Wir formatieren die Float-Werte auf 4 Nachkommastellen (%.4f), das reicht völlig aus
     // und hält die Dateigröße kompakt. Integers (%d) bleiben als ganze Zahlen.
+    // (Genau dasselbe Format wie float_format="%.4f" in generate_training_data.py → konsistent.)
     // WICHTIG: Die Reihenfolge der Variablen muss exakt der Reihenfolge in GetCSVHeader() entsprechen!
+    //   Sonst landen Werte unter der falschen Spalte und das ML-Modell lernt Unsinn.
     return FString::Printf(
         TEXT("%s,%.4f,"
              "%.4f,%.4f,%.4f,%.4f,%.4f,"
