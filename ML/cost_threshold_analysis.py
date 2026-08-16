@@ -20,6 +20,12 @@ Verwendung:
 """
 
 import os
+# Windows-Konsole nutzt standardmaessig cp1252 und bricht bei Zeichen wie
+# tau, lambda oder Pfeilen mit UnicodeEncodeError ab. UTF-8 erzwingen,
+# damit die mathematische Notation in der Ausgabe erhalten bleibt.
+import sys
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
 import numpy as np
 import pandas as pd
 import matplotlib

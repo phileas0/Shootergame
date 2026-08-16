@@ -12,9 +12,15 @@ Ausgabe:
 """
 
 import os
+# Windows-Konsole nutzt standardmaessig cp1252 und bricht bei Zeichen wie
+# tau, lambda oder Pfeilen mit UnicodeEncodeError ab. UTF-8 erzwingen,
+# damit die mathematische Notation in der Ausgabe erhalten bleibt.
 import sys
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
 import glob
 import time
+import json
 import argparse
 import joblib
 import pandas as pd
@@ -28,9 +34,14 @@ TELEMETRY_DIR = os.path.join(PROJECT_ROOT, "Saved", "Telemetry")
 MODEL_PATH_RF = os.path.join(SCRIPT_DIR, "results", "model_rf.pkl")
 MODEL_PATH_LR = os.path.join(SCRIPT_DIR, "results", "model_lr.pkl")
 
-# Dieselben Ausschlüsse wie in train_model.py
-ZERO_FEATURES = ["AimAngularErrorMean", "AimAngularErrorStdDev", "HeadshotRate"]
-META_COLS     = ["PlayerID", "Label"]
+MODEL_PATH_FEATURES = os.path.join(SCRIPT_DIR, "results", "feature_columns.json")
+
+# Feature-Definition zentral aus features.py, damit Training und Inferenz
+# garantiert identisch rechnen.
+from features import (
+    ZERO_FEATURES, META_COLS, add_derived_features, get_feature_cols,
+    check_feature_match
+)
 
 # Optimaler Threshold (aus threshold_analysis_random_forest.csv, C_FP=1 / C_FN=10)
 THRESHOLD = 0.3
@@ -74,9 +85,25 @@ def prepare_features(df):
     if df_active.empty:
         return df_active, []
 
-    # Feature-Spalten: alle außer Meta + dauerhaft-Null-Features
-    exclude = set(META_COLS) | set(ZERO_FEATURES)
-    feature_cols = [c for c in df_active.columns if c not in exclude]
+    # Abgeleitete Features exakt wie im Training ergänzen
+    df_active = add_derived_features(df_active)
+    feature_cols = get_feature_cols(df_active)
+
+    # Gegen die beim Training gespeicherte Spaltenliste prüfen. Fehlt die
+    # Datei, stammt das Modell aus einem älteren Trainingslauf — dann wird
+    # ohne Prüfung fortgefahren, aber gewarnt.
+    if os.path.exists(MODEL_PATH_FEATURES):
+        with open(MODEL_PATH_FEATURES, "r", encoding="utf-8") as f:
+            expected = json.load(f)
+        problem = check_feature_match(expected, feature_cols)
+        if problem:
+            print("[FEHLER] " + problem)
+            sys.exit(1)
+        feature_cols = expected
+    else:
+        print(f"[WARNUNG] {os.path.basename(MODEL_PATH_FEATURES)} fehlt — "
+              f"Feature-Schema kann nicht geprueft werden. "
+              f"Modell mit train_model.py neu trainieren.")
 
     return df_active, feature_cols
 

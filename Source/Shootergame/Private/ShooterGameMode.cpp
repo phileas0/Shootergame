@@ -12,7 +12,7 @@
 #include "TimerManager.h"
 
 AShooterGameMode::AShooterGameMode()
-    : MatchDuration(300.f)
+    : MatchDuration(150.f)
     , CountdownDuration(5.f)
     , PostGameDuration(15.f)
     , MinPlayersToStart(2)

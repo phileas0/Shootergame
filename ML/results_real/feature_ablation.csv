@@ -1,0 +1,5 @@
+Variante,Merkmale,ROC_AUC,ROC_AUC_std,AvgPrec,Kosten,d_ROC_AUC,d_Kosten
+voller Satz,25,0.7956,0.0246,0.6412,103.3,0.0,0.0
+ohne SessionDurationSeconds,24,0.7959,0.0223,0.6406,104.4,0.0003,1.1
+ohne KillDeathRatio,24,0.8011,0.0219,0.644,99.7,0.0055,-3.6
+ohne beide,23,0.798,0.0219,0.626,101.9,0.0024,-1.4

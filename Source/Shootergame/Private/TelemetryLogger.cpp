@@ -85,6 +85,7 @@ FString UTelemetryLogger::GetCSVHeader()
         "AimAngularSpeedStdDev,"
         "AimAngularErrorMean,"
         "AimAngularErrorStdDev,"
+        "AimErrorSampleCount,"
         "AimFlipRatio,"
         // Movement
         "MovementSpeedMean,"
@@ -116,7 +117,7 @@ FString UTelemetryLogger::SessionToCSVRow(const FPlayerSessionData& D)
 {
     return FString::Printf(
         TEXT("%s,%.4f,"
-             "%.4f,%.4f,%.4f,%.4f,%.4f,"
+             "%.4f,%.4f,%.4f,%.4f,%d,%.4f,"
              "%.4f,%.4f,%.4f,%.4f,%.4f,"
              "%.4f,%.4f,%.4f,%.4f,%.4f,"
              "%.4f,%.4f,%.4f,%.4f,"
@@ -127,6 +128,7 @@ FString UTelemetryLogger::SessionToCSVRow(const FPlayerSessionData& D)
         // Aim
         D.AimAngularSpeedMean, D.AimAngularSpeedStdDev,
         D.AimAngularErrorMean, D.AimAngularErrorStdDev,
+        D.AimErrorSampleCount,
         D.AimFlipRatio,
         // Movement
         D.MovementSpeedMean, D.MovementSpeedMax,

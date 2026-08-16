@@ -152,6 +152,15 @@ public:
     float EnemyCheckDistance;
 
     /**
+     * Maximaler Winkel (Grad) zwischen Blickrichtung und Ziel, damit ein Schuss
+     * als "auf ein Ziel gerichtet" gewertet wird und in AimAngularError einfließt.
+     * Schüsse ohne sichtbares Ziel in diesem Kegel liefern keine Stichprobe.
+     * Default: 45 Grad
+     */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Telemetry|Config")
+    float AimErrorMaxAngle;
+
+    /**
      * Bone names that count as headshot bones.
      * Default: {"head", "Head", "HEAD", "neck_01"}
      */
@@ -182,6 +191,26 @@ private:
     int32         AimFlipCount;
     FVector       LastViewDirection;
 
+    /**
+     * False bis die erste Blickrichtung erfasst wurde.
+     * Ohne dieses Flag würde der erste Tick nach einem (Re-)Spawn die echte
+     * Blickrichtung gegen den Default-Vorwärtsvektor des frisch gespawnten Pawns
+     * vergleichen und den Sprung als Aim-Flip zählen. Messung: drei Tode
+     * erzeugten so bei komplett inaktiven Spielern AimFlipRatio 0,22-0,44 %.
+     */
+    bool bHasAimReference;
+
+    /** Analog zu bHasAimReference für die Bewegungsrichtung */
+    bool bHasMoveReference;
+
+    /**
+     * Anzahl Schüsse, die ein sichtbares Ziel im Kegel hatten und damit eine
+     * AimAngularError-Stichprobe geliefert haben.
+     * Nötig, um "perfektes Zielen" (Fehler ~0) von "nie auf jemanden geschossen"
+     * (ebenfalls Fehler 0, weil keine Stichproben) unterscheiden zu können.
+     */
+    int32 AimErrorSampleCount;
+
     // --- Movement raw samples ---
     TArray<float> MovementSpeeds;
     int32         DirectionChangeCount;
@@ -211,6 +240,31 @@ private:
 
     /** Runs a Line Trace to check if an enemy NPC is in the player's line of sight */
     void CheckEnemyLineOfSight();
+
+    /**
+     * Misst den Winkelfehler zwischen Blickrichtung und dem Ziel, das dem
+     * Fadenkreuz am nächsten liegt, und hängt ihn an AimAngularErrors an.
+     * Wird bei jedem Schuss aufgerufen (RecordShot).
+     *
+     * Gewertet werden nur Ziele, die
+     *   - innerhalb von EnemyCheckDistance liegen,
+     *   - innerhalb des Kegels AimErrorMaxAngle liegen und
+     *   - eine freie Sichtlinie haben.
+     * Findet sich kein solches Ziel, wird keine Stichprobe erzeugt.
+     */
+    void SampleAimError();
+
+    /** Prüft, ob zwischen Augenposition und Zielmittelpunkt keine Geometrie blockiert */
+    bool HasLineOfSightTo(const AActor* Target, const FVector& EyeLocation) const;
+
+    /**
+     * Liefert die Körperpunkte eines Ziels, gegen die der Zielfehler gemessen wird:
+     * Kapselmitte (Torso) und — falls das Skelett ihn hat — den Kopfknochen.
+     * Gewertet wird später der kleinste Winkel über alle Punkte, damit
+     * "Fadenkreuz irgendwo auf dem Gegner" annähernd 0 Grad ergibt,
+     * unabhängig davon, auf welches Körperteil ein Aimbot rastet.
+     */
+    void GetTargetAimPoints(const ACharacter* Target, TArray<FVector>& OutPoints) const;
 
     /** Returns true if the given bone name is considered a headshot bone */
     bool IsHeadshotBone(FName BoneName) const;

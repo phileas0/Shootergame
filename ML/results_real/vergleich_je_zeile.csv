@@ -1,0 +1,297 @@
+SessionFile,PlayerID,Person,Label,CheatType,RuleScore,RuleFlags,RulePred,RF_Probability,MLPred
+session_2026-08-13_12-23-24.csv,Jacins-PC-6F2FC02F43,Jacin,0,,25.0,ON_TARGET_RATIO (78.6% der Schuesse auf ein Ziel gerichtet),0,0.0622631913314072,0
+session_2026-08-13_12-23-24.csv,Phileas-PC-338CF49F4,Phileas,0,,25.0,ON_TARGET_RATIO (80.0% der Schuesse auf ein Ziel gerichtet),0,0.1206852877367249,0
+session_2026-08-13_12-23-24.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (82.9% der Schuesse auf ein Ziel gerichtet),0,0.1197141243541347,0
+session_2026-08-13_12-23-24.csv,Krystall-8CBC35F24BD,Peter,0,,25.0,ON_TARGET_RATIO (81.2% der Schuesse auf ein Ziel gerichtet),0,0.1044074616780218,0
+session_2026-08-13_12-23-24.csv,DESKTOP-375SOSC-ECA1,Joni,0,,25.0,ON_TARGET_RATIO (90.1% der Schuesse auf ein Ziel gerichtet),0,0.1273454249195674,0
+session_2026-08-13_12-26-14.csv,Jacins-PC-6F2FC02F43,Jacin,0,,25.0,ON_TARGET_RATIO (72.3% der Schuesse auf ein Ziel gerichtet),0,0.030919046286296,0
+session_2026-08-13_12-26-14.csv,Phileas-PC-338CF49F4,Phileas,0,,25.0,ON_TARGET_RATIO (78.8% der Schuesse auf ein Ziel gerichtet),0,0.0073959601707286,0
+session_2026-08-13_12-26-14.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (70.1% der Schuesse auf ein Ziel gerichtet),0,0.1454684708009296,0
+session_2026-08-13_12-26-14.csv,Krystall-8CBC35F24BD,Peter,0,,25.0,ON_TARGET_RATIO (82.0% der Schuesse auf ein Ziel gerichtet),0,0.0560206302488327,0
+session_2026-08-13_12-26-14.csv,DESKTOP-375SOSC-ECA1,Joni,0,,25.0,ON_TARGET_RATIO (74.7% der Schuesse auf ein Ziel gerichtet),0,0.0863859014335732,0
+session_2026-08-13_12-29-04.csv,Phileas-PC-338CF49F4,Phileas,0,,25.0,ON_TARGET_RATIO (82.6% der Schuesse auf ein Ziel gerichtet),0,0.0694719801818782,0
+session_2026-08-13_12-29-04.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (46.9% der Schuesse auf ein Ziel gerichtet),0,0.1374439771199998,0
+session_2026-08-13_12-29-04.csv,Krystall-8CBC35F24BD,Peter,0,,25.0,ON_TARGET_RATIO (85.7% der Schuesse auf ein Ziel gerichtet),0,0.1981932931198002,1
+session_2026-08-13_12-29-04.csv,DESKTOP-375SOSC-ECA1,Joni,0,,25.0,ON_TARGET_RATIO (82.9% der Schuesse auf ein Ziel gerichtet),0,0.1895021581977588,1
+session_2026-08-13_12-29-04.csv,LAPTOP-IN41KCMK-5468,Clemi,0,,25.0,ON_TARGET_RATIO (70.6% der Schuesse auf ein Ziel gerichtet),0,0.1682219648247449,0
+session_2026-08-13_12-37-03.csv,Krystall-8CBC35F24BD,Peter,1,aimbot+wallhack+triggerbot,85.0,"ON_TARGET_RATIO (78.5% der Schuesse auf ein Ziel gerichtet); GOD_MODE (23 Kills, 0 Deaths)",1,0.6788154357605827,1
+session_2026-08-13_12-37-03.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (60.2% der Schuesse auf ein Ziel gerichtet),0,0.1209100483527879,0
+session_2026-08-13_12-37-03.csv,LAPTOP-IN41KCMK-5468,Clemi,0,,25.0,ON_TARGET_RATIO (85.6% der Schuesse auf ein Ziel gerichtet),0,0.0836005443147043,0
+session_2026-08-13_12-37-03.csv,Phileas-PC-338CF49F4,Phileas,0,,25.0,ON_TARGET_RATIO (76.7% der Schuesse auf ein Ziel gerichtet),0,0.1562467591122564,0
+session_2026-08-13_12-37-03.csv,DESKTOP-375SOSC-ECA1,Joni,0,,25.0,ON_TARGET_RATIO (56.9% der Schuesse auf ein Ziel gerichtet),0,0.1817685039580521,1
+session_2026-08-13_12-41-33.csv,DESKTOP-375SOSC-ECA1,Joni,1,aimbot+triggerbot,50.0,AIM_SNAPPING (1.34% flips); ON_TARGET_RATIO (83.6% der Schuesse auf ein Ziel gerichtet),1,0.4754943846488301,1
+session_2026-08-13_12-41-33.csv,Phileas-PC-338CF49F4,Phileas,0,,25.0,ON_TARGET_RATIO (69.8% der Schuesse auf ein Ziel gerichtet),0,0.0421431289625339,0
+session_2026-08-13_12-41-33.csv,Krystall-8CBC35F24BD,Peter,0,,25.0,ON_TARGET_RATIO (67.3% der Schuesse auf ein Ziel gerichtet),0,0.1065022719481637,0
+session_2026-08-13_12-41-33.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (71.4% der Schuesse auf ein Ziel gerichtet),0,0.1217828300854483,0
+session_2026-08-13_12-41-33.csv,LAPTOP-IN41KCMK-5468,Clemi,0,,25.0,ON_TARGET_RATIO (78.0% der Schuesse auf ein Ziel gerichtet),0,0.0284143261787379,0
+session_2026-08-13_12-44-52.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (82.9% der Schuesse auf ein Ziel gerichtet),0,0.1479051233701408,0
+session_2026-08-13_12-44-52.csv,Phileas-PC-338CF49F4,Phileas,0,,25.0,ON_TARGET_RATIO (77.2% der Schuesse auf ein Ziel gerichtet),0,0.0236452648131683,0
+session_2026-08-13_12-44-52.csv,Krystall-8CBC35F24BD,Peter,0,,25.0,ON_TARGET_RATIO (81.1% der Schuesse auf ein Ziel gerichtet),0,0.1187630589646891,0
+session_2026-08-13_12-44-52.csv,DESKTOP-375SOSC-ECA1,Joni,0,,25.0,ON_TARGET_RATIO (78.9% der Schuesse auf ein Ziel gerichtet),0,0.1253964853199305,0
+session_2026-08-13_12-44-52.csv,LAPTOP-IN41KCMK-5468,Clemi,0,,25.0,ON_TARGET_RATIO (75.8% der Schuesse auf ein Ziel gerichtet),0,0.0537658998713718,0
+session_2026-08-13_12-47-42.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (77.7% der Schuesse auf ein Ziel gerichtet),0,0.0291860553655525,0
+session_2026-08-13_12-47-42.csv,Phileas-PC-338CF49F4,Phileas,0,,25.0,ON_TARGET_RATIO (71.8% der Schuesse auf ein Ziel gerichtet),0,0.1237704562685348,0
+session_2026-08-13_12-47-42.csv,Krystall-8CBC35F24BD,Peter,0,,25.0,ON_TARGET_RATIO (78.9% der Schuesse auf ein Ziel gerichtet),0,0.2078560798555896,1
+session_2026-08-13_12-47-42.csv,DESKTOP-375SOSC-ECA1,Joni,0,,25.0,ON_TARGET_RATIO (83.0% der Schuesse auf ein Ziel gerichtet),0,0.054628628836472,0
+session_2026-08-13_12-47-42.csv,LAPTOP-IN41KCMK-5468,Clemi,0,,25.0,ON_TARGET_RATIO (68.3% der Schuesse auf ein Ziel gerichtet),0,0.0287955907347917,0
+session_2026-08-13_12-51-13.csv,Phileas-PC-338CF49F4,Phileas,0,,25.0,ON_TARGET_RATIO (82.6% der Schuesse auf ein Ziel gerichtet),0,0.0257004560912163,0
+session_2026-08-13_12-51-13.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (74.7% der Schuesse auf ein Ziel gerichtet),0,0.0998937117015224,0
+session_2026-08-13_12-51-13.csv,DESKTOP-375SOSC-ECA1,Joni,0,,25.0,ON_TARGET_RATIO (71.8% der Schuesse auf ein Ziel gerichtet),0,0.1384045983343866,0
+session_2026-08-13_12-51-13.csv,Krystall-8CBC35F24BD,Peter,0,,25.0,ON_TARGET_RATIO (81.3% der Schuesse auf ein Ziel gerichtet),0,0.0933317923538536,0
+session_2026-08-13_12-51-13.csv,LAPTOP-IN41KCMK-5468,Clemi,0,,25.0,ON_TARGET_RATIO (73.3% der Schuesse auf ein Ziel gerichtet),0,0.184919953036079,1
+session_2026-08-13_12-54-03.csv,Phileas-PC-338CF49F4,Phileas,0,,25.0,ON_TARGET_RATIO (84.9% der Schuesse auf ein Ziel gerichtet),0,0.0126347711716539,0
+session_2026-08-13_12-54-03.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (69.4% der Schuesse auf ein Ziel gerichtet),0,0.0889894579061019,0
+session_2026-08-13_12-54-03.csv,DESKTOP-375SOSC-ECA1,Joni,0,,25.0,ON_TARGET_RATIO (88.8% der Schuesse auf ein Ziel gerichtet),0,0.1487783343734274,0
+session_2026-08-13_12-54-03.csv,Krystall-8CBC35F24BD,Peter,0,,25.0,ON_TARGET_RATIO (84.1% der Schuesse auf ein Ziel gerichtet),0,0.0311894678510712,0
+session_2026-08-13_12-54-03.csv,LAPTOP-IN41KCMK-5468,Clemi,0,,25.0,ON_TARGET_RATIO (86.0% der Schuesse auf ein Ziel gerichtet),0,0.076692517074854,0
+session_2026-08-13_12-56-54.csv,Phileas-PC-338CF49F4,Phileas,0,,25.0,ON_TARGET_RATIO (74.6% der Schuesse auf ein Ziel gerichtet),0,0.1145861592966864,0
+session_2026-08-13_12-56-54.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (89.8% der Schuesse auf ein Ziel gerichtet),0,0.1468763939682885,0
+session_2026-08-13_12-56-54.csv,DESKTOP-375SOSC-ECA1,Joni,0,,25.0,ON_TARGET_RATIO (67.8% der Schuesse auf ein Ziel gerichtet),0,0.0524294500831145,0
+session_2026-08-13_12-56-54.csv,Krystall-8CBC35F24BD,Peter,0,,25.0,ON_TARGET_RATIO (67.8% der Schuesse auf ein Ziel gerichtet),0,0.0621716665870738,0
+session_2026-08-13_12-56-54.csv,LAPTOP-IN41KCMK-5468,Clemi,0,,25.0,ON_TARGET_RATIO (77.0% der Schuesse auf ein Ziel gerichtet),0,0.0864010190045462,0
+session_2026-08-13_12-59-44.csv,Phileas-PC-338CF49F4,Phileas,0,,60.0,"AIMBOT_PRECISION (5.96 deg mean error, n=91); ON_TARGET_RATIO (62.8% der Schuesse auf ein Ziel gerichtet)",1,0.0910153743328665,0
+session_2026-08-13_12-59-44.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (82.2% der Schuesse auf ein Ziel gerichtet),0,0.1374950523752069,0
+session_2026-08-13_12-59-44.csv,DESKTOP-375SOSC-ECA1,Joni,0,,25.0,ON_TARGET_RATIO (84.1% der Schuesse auf ein Ziel gerichtet),0,0.0908348191137404,0
+session_2026-08-13_12-59-44.csv,Krystall-8CBC35F24BD,Peter,0,,25.0,ON_TARGET_RATIO (61.3% der Schuesse auf ein Ziel gerichtet),0,0.0363613721054879,0
+session_2026-08-13_12-59-44.csv,LAPTOP-IN41KCMK-5468,Clemi,0,,25.0,ON_TARGET_RATIO (71.6% der Schuesse auf ein Ziel gerichtet),0,0.0464218137474634,0
+session_2026-08-13_13-02-34.csv,Phileas-PC-338CF49F4,Phileas,0,,25.0,ON_TARGET_RATIO (78.6% der Schuesse auf ein Ziel gerichtet),0,0.004998576001437,0
+session_2026-08-13_13-02-34.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (72.5% der Schuesse auf ein Ziel gerichtet),0,0.0342437537597121,0
+session_2026-08-13_13-02-34.csv,DESKTOP-375SOSC-ECA1,Joni,0,,0.0,,0,0.0927201058530096,0
+session_2026-08-13_13-02-34.csv,Krystall-8CBC35F24BD,Peter,0,,25.0,ON_TARGET_RATIO (85.4% der Schuesse auf ein Ziel gerichtet),0,0.0293293222665646,0
+session_2026-08-13_13-02-34.csv,LAPTOP-IN41KCMK-5468,Clemi,0,,25.0,ON_TARGET_RATIO (72.4% der Schuesse auf ein Ziel gerichtet),0,0.0182505510439358,0
+session_2026-08-13_19-43-23.csv,MBurgerPC-C08954A945,Maxi,0,,25.0,ON_TARGET_RATIO (70.9% der Schuesse auf ein Ziel gerichtet),0,0.0267661774067335,0
+session_2026-08-13_19-43-23.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (70.2% der Schuesse auf ein Ziel gerichtet),0,0.0289756218336105,0
+session_2026-08-13_19-43-23.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (66.8% der Schuesse auf ein Ziel gerichtet),0,0.1133699348458228,0
+session_2026-08-13_19-43-23.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (71.2% der Schuesse auf ein Ziel gerichtet),0,0.0105709310273372,0
+session_2026-08-13_19-46-13.csv,MBurgerPC-C08954A945,Maxi,1,aimbot,25.0,ON_TARGET_RATIO (77.4% der Schuesse auf ein Ziel gerichtet),0,0.0174585075407904,0
+session_2026-08-13_19-46-13.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (85.0% der Schuesse auf ein Ziel gerichtet),0,0.0211388794740211,0
+session_2026-08-13_19-46-13.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (65.0% der Schuesse auf ein Ziel gerichtet),0,0.1360984656295009,0
+session_2026-08-13_19-46-13.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (62.3% der Schuesse auf ein Ziel gerichtet),0,0.0343919052264269,0
+session_2026-08-13_19-49-20.csv,MBurgerPC-C08954A945,Maxi,0,,25.0,ON_TARGET_RATIO (61.7% der Schuesse auf ein Ziel gerichtet),0,0.016358689479438,0
+session_2026-08-13_19-49-20.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (84.5% der Schuesse auf ein Ziel gerichtet),0,0.0504637033314077,0
+session_2026-08-13_19-49-20.csv,Stacjonarny-CA89EB15,Mateusz,1,aimbot+wallhack+triggerbot+godmode,100.0,"INSANE_RAPID_FIRE (21.7 active shots/s); AIM_SNAPPING (1.13% flips); ON_TARGET_RATIO (71.7% der Schuesse auf ein Ziel gerichtet); GOD_MODE (28 Kills, 0 Deaths)",1,0.7416808829224575,1
+session_2026-08-13_19-49-20.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (50.0% der Schuesse auf ein Ziel gerichtet),0,0.2421541977038602,1
+session_2026-08-13_19-52-40.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (75.9% der Schuesse auf ein Ziel gerichtet),0,0.0416595118815522,0
+session_2026-08-13_19-52-40.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (75.1% der Schuesse auf ein Ziel gerichtet),0,0.0278910525876232,0
+session_2026-08-13_19-52-40.csv,MBurgerPC-C08954A945,Maxi,0,,25.0,ON_TARGET_RATIO (73.6% der Schuesse auf ein Ziel gerichtet),0,0.1248741148394857,0
+session_2026-08-13_19-52-40.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (64.8% der Schuesse auf ein Ziel gerichtet),0,0.0382956313846001,0
+session_2026-08-13_19-55-30.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (55.4% der Schuesse auf ein Ziel gerichtet),0,0.1027917145770632,0
+session_2026-08-13_19-55-30.csv,Phileas-PC-167800BF4,Phileas,0,,0.0,,0,0.2041091490856542,1
+session_2026-08-13_19-55-30.csv,MBurgerPC-C08954A945,Maxi,0,,25.0,ON_TARGET_RATIO (48.9% der Schuesse auf ein Ziel gerichtet),0,0.038188761536325,0
+session_2026-08-13_19-55-30.csv,RF-MS1-1-EF024FED46C,Nikolay,1,triggerbot+godmode,25.0,ON_TARGET_RATIO (69.8% der Schuesse auf ein Ziel gerichtet),0,0.2891834828052858,1
+session_2026-08-13_19-58-20.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (68.8% der Schuesse auf ein Ziel gerichtet),0,0.0954203910105626,0
+session_2026-08-13_19-58-20.csv,MBurgerPC-C08954A945,Maxi,0,,25.0,ON_TARGET_RATIO (72.8% der Schuesse auf ein Ziel gerichtet),0,0.0457137432436931,0
+session_2026-08-13_19-58-20.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (88.7% der Schuesse auf ein Ziel gerichtet),0,0.1208312944946055,0
+session_2026-08-13_19-58-20.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (82.3% der Schuesse auf ein Ziel gerichtet),0,0.063283865611348,0
+session_2026-08-13_20-01-10.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (84.5% der Schuesse auf ein Ziel gerichtet),0,0.1547461983703705,0
+session_2026-08-13_20-01-10.csv,MBurgerPC-C08954A945,Maxi,1,wallhack,25.0,ON_TARGET_RATIO (74.3% der Schuesse auf ein Ziel gerichtet),0,0.005668795161275,0
+session_2026-08-13_20-01-10.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (88.0% der Schuesse auf ein Ziel gerichtet),0,0.0087660925248138,0
+session_2026-08-13_20-01-10.csv,Stacjonarny-CA89EB15,Mateusz,0,,60.0,"AIMBOT_PRECISION (4.94 deg mean error, n=224); ON_TARGET_RATIO (79.7% der Schuesse auf ein Ziel gerichtet)",1,0.0787034696284385,0
+session_2026-08-13_20-04-00.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (70.7% der Schuesse auf ein Ziel gerichtet),0,0.0289353385147568,0
+session_2026-08-13_20-04-00.csv,MBurgerPC-C08954A945,Maxi,0,,25.0,ON_TARGET_RATIO (77.6% der Schuesse auf ein Ziel gerichtet),0,0.1246200692203763,0
+session_2026-08-13_20-04-00.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (81.9% der Schuesse auf ein Ziel gerichtet),0,0.06796647901055,0
+session_2026-08-13_20-04-00.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (73.9% der Schuesse auf ein Ziel gerichtet),0,0.078356182178034,0
+session_2026-08-13_20-06-50.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (85.4% der Schuesse auf ein Ziel gerichtet),0,0.0726989437475846,0
+session_2026-08-13_20-06-50.csv,MBurgerPC-C08954A945,Maxi,0,,25.0,ON_TARGET_RATIO (75.1% der Schuesse auf ein Ziel gerichtet),0,0.0387127840943756,0
+session_2026-08-13_20-06-50.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (78.1% der Schuesse auf ein Ziel gerichtet),0,0.0377126873089075,0
+session_2026-08-13_20-06-50.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (73.9% der Schuesse auf ein Ziel gerichtet),0,0.0664466412000599,0
+session_2026-08-13_20-10-52.csv,MBurgerPC-C08954A945,Maxi,0,,25.0,ON_TARGET_RATIO (61.1% der Schuesse auf ein Ziel gerichtet),0,0.0474831504703243,0
+session_2026-08-13_20-10-52.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (73.4% der Schuesse auf ein Ziel gerichtet),0,0.0272408136827213,0
+session_2026-08-13_20-10-52.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (72.6% der Schuesse auf ein Ziel gerichtet),0,0.0996745507723266,0
+session_2026-08-13_20-10-52.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (50.0% der Schuesse auf ein Ziel gerichtet),0,0.0614289168137288,0
+session_2026-08-13_20-13-42.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (62.5% der Schuesse auf ein Ziel gerichtet),0,0.073913986649783,0
+session_2026-08-13_20-13-42.csv,Phileas-PC-167800BF4,Phileas,1,wallhack,60.0,"AIMBOT_PRECISION (4.87 deg mean error, n=167); ON_TARGET_RATIO (78.8% der Schuesse auf ein Ziel gerichtet)",1,0.0962989609955493,0
+session_2026-08-13_20-13-42.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (84.8% der Schuesse auf ein Ziel gerichtet),0,0.0976474932879234,0
+session_2026-08-13_20-13-42.csv,MBurgerPC-C08954A945,Maxi,0,,25.0,ON_TARGET_RATIO (84.9% der Schuesse auf ein Ziel gerichtet),0,0.188225785597163,1
+session_2026-08-13_20-16-32.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (77.1% der Schuesse auf ein Ziel gerichtet),0,0.022085271530879,0
+session_2026-08-13_20-16-32.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (81.6% der Schuesse auf ein Ziel gerichtet),0,0.0324734532885552,0
+session_2026-08-13_20-16-32.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (79.5% der Schuesse auf ein Ziel gerichtet),0,0.2291286590873149,1
+session_2026-08-13_20-16-32.csv,MBurgerPC-C08954A945,Maxi,0,,25.0,ON_TARGET_RATIO (68.7% der Schuesse auf ein Ziel gerichtet),0,0.0054183051786208,0
+session_2026-08-13_20-19-22.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (71.1% der Schuesse auf ein Ziel gerichtet),0,0.2105026967454666,1
+session_2026-08-13_20-19-22.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (75.4% der Schuesse auf ein Ziel gerichtet),0,0.147642726480805,0
+session_2026-08-13_20-19-22.csv,Stacjonarny-CA89EB15,Mateusz,0,,60.0,"AIMBOT_PRECISION (5.35 deg mean error, n=57); ON_TARGET_RATIO (66.3% der Schuesse auf ein Ziel gerichtet)",1,0.0767356739077948,0
+session_2026-08-13_20-19-22.csv,MBurgerPC-C08954A945,Maxi,0,,25.0,ON_TARGET_RATIO (75.1% der Schuesse auf ein Ziel gerichtet),0,0.0595641106916223,0
+session_2026-08-13_20-22-12.csv,RF-MS1-1-EF024FED46C,Nikolay,1,godmode+triggerbot,60.0,"AIMBOT_PRECISION (3.71 deg mean error, n=289); ON_TARGET_RATIO (84.8% der Schuesse auf ein Ziel gerichtet)",1,0.337848351503577,1
+session_2026-08-13_20-22-12.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (57.4% der Schuesse auf ein Ziel gerichtet),0,0.2233734643740229,1
+session_2026-08-13_20-22-12.csv,Stacjonarny-CA89EB15,Mateusz,0,,60.0,"AIMBOT_PRECISION (3.34 deg mean error, n=294); ON_TARGET_RATIO (69.5% der Schuesse auf ein Ziel gerichtet)",1,0.1177134633401857,0
+session_2026-08-13_20-22-12.csv,MBurgerPC-C08954A945,Maxi,0,,25.0,ON_TARGET_RATIO (55.0% der Schuesse auf ein Ziel gerichtet),0,0.0752131492464091,0
+session_2026-08-13_20-25-02.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (69.8% der Schuesse auf ein Ziel gerichtet),0,0.0363230340025216,0
+session_2026-08-13_20-25-02.csv,MBurgerPC-C08954A945,Maxi,0,,25.0,ON_TARGET_RATIO (75.5% der Schuesse auf ein Ziel gerichtet),0,0.0993420848948522,0
+session_2026-08-13_20-25-02.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (74.1% der Schuesse auf ein Ziel gerichtet),0,0.0473149807284068,0
+session_2026-08-13_20-25-02.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (79.8% der Schuesse auf ein Ziel gerichtet),0,0.0583290545115781,0
+session_2026-08-13_20-27-53.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (73.3% der Schuesse auf ein Ziel gerichtet),0,0.0551341560461555,0
+session_2026-08-13_20-27-53.csv,MBurgerPC-C08954A945,Maxi,1,aimbot,60.0,"AIMBOT_PRECISION (5.02 deg mean error, n=145); ON_TARGET_RATIO (85.8% der Schuesse auf ein Ziel gerichtet)",1,0.2568554427989765,1
+session_2026-08-13_20-27-53.csv,Phileas-PC-167800BF4,Phileas,1,wallhack,25.0,ON_TARGET_RATIO (68.2% der Schuesse auf ein Ziel gerichtet),0,0.0135835840982,0
+session_2026-08-13_20-27-53.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (73.8% der Schuesse auf ein Ziel gerichtet),0,0.0291512145623182,0
+session_2026-08-13_20-40-09.csv,Phileas-PC-167800BF4,Phileas,1,aimbot,25.0,ON_TARGET_RATIO (63.8% der Schuesse auf ein Ziel gerichtet),0,0.5230945684194153,1
+session_2026-08-13_20-40-09.csv,MBurgerPC-C08954A945,Maxi,0,,25.0,ON_TARGET_RATIO (83.3% der Schuesse auf ein Ziel gerichtet),0,0.0127659302862163,0
+session_2026-08-13_20-40-09.csv,Stacjonarny-CA89EB15,Mateusz,0,,0.0,,0,0.1143137474178548,0
+session_2026-08-13_20-40-09.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (86.2% der Schuesse auf ein Ziel gerichtet),0,0.0530070616340142,0
+session_2026-08-13_20-42-59.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (76.6% der Schuesse auf ein Ziel gerichtet),0,0.0148281491003146,0
+session_2026-08-13_20-42-59.csv,MBurgerPC-C08954A945,Maxi,0,,25.0,ON_TARGET_RATIO (78.7% der Schuesse auf ein Ziel gerichtet),0,0.0253147888595189,0
+session_2026-08-13_20-42-59.csv,Stacjonarny-CA89EB15,Mateusz,0,,65.0,"TRIGGERBOT_REACTION (33.4ms mean, 0.0ms std); ON_TARGET_RATIO (47.4% der Schuesse auf ein Ziel gerichtet)",1,0.0802679677249031,0
+session_2026-08-13_20-42-59.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (71.3% der Schuesse auf ein Ziel gerichtet),0,0.0700809083933386,0
+session_2026-08-13_20-45-49.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (73.5% der Schuesse auf ein Ziel gerichtet),0,0.0166045947126482,0
+session_2026-08-13_20-45-49.csv,MBurgerPC-C08954A945,Maxi,0,,25.0,ON_TARGET_RATIO (84.0% der Schuesse auf ein Ziel gerichtet),0,0.0027994071146245,0
+session_2026-08-13_20-45-49.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (87.0% der Schuesse auf ein Ziel gerichtet),0,0.0336893600234997,0
+session_2026-08-13_20-45-49.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,60.0,"AIMBOT_PRECISION (4.09 deg mean error, n=59); ON_TARGET_RATIO (73.8% der Schuesse auf ein Ziel gerichtet)",1,0.2589356828056641,1
+session_2026-08-13_20-48-39.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (69.0% der Schuesse auf ein Ziel gerichtet),0,0.1049896768518162,0
+session_2026-08-13_20-48-39.csv,MBurgerPC-C08954A945,Maxi,0,,25.0,ON_TARGET_RATIO (55.1% der Schuesse auf ein Ziel gerichtet),0,0.0711055340199663,0
+session_2026-08-13_20-48-39.csv,RF-MS1-1-EF024FED46C,Nikolay,1,aimbot+wallhack+triggerbot+godmode,25.0,ON_TARGET_RATIO (51.1% der Schuesse auf ein Ziel gerichtet),0,0.7775139757070322,1
+session_2026-08-14_14-25-16.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (72.9% der Schuesse auf ein Ziel gerichtet),0,0.031933675368465,0
+session_2026-08-14_14-25-16.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (59.9% der Schuesse auf ein Ziel gerichtet),0,0.0498435791655711,0
+session_2026-08-14_14-25-16.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (71.0% der Schuesse auf ein Ziel gerichtet),0,0.0498789702271675,0
+session_2026-08-14_14-25-16.csv,LAPTOP-IN41KCMK-5468,Clemi,0,,25.0,ON_TARGET_RATIO (71.7% der Schuesse auf ein Ziel gerichtet),0,0.0802385351224742,0
+session_2026-08-14_14-28-06.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (73.1% der Schuesse auf ein Ziel gerichtet),0,0.041298028251221,0
+session_2026-08-14_14-28-06.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (83.2% der Schuesse auf ein Ziel gerichtet),0,0.1774775296873676,1
+session_2026-08-14_14-28-06.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (80.3% der Schuesse auf ein Ziel gerichtet),0,0.0114927881529489,0
+session_2026-08-14_14-28-06.csv,LAPTOP-IN41KCMK-5468,Clemi,1,aimbot,25.0,ON_TARGET_RATIO (45.6% der Schuesse auf ein Ziel gerichtet),0,0.4931419451844231,1
+session_2026-08-14_14-30-56.csv,MBurgerPC-C08954A945,Maxi,0,,25.0,ON_TARGET_RATIO (79.0% der Schuesse auf ein Ziel gerichtet),0,0.0677192354305595,0
+session_2026-08-14_14-30-56.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (75.0% der Schuesse auf ein Ziel gerichtet),0,0.1471013478562912,0
+session_2026-08-14_14-30-56.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (70.3% der Schuesse auf ein Ziel gerichtet),0,0.0419695202307126,0
+session_2026-08-14_14-30-56.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (72.3% der Schuesse auf ein Ziel gerichtet),0,0.0528137580279016,0
+session_2026-08-14_14-30-56.csv,LAPTOP-IN41KCMK-5468,Clemi,0,,25.0,ON_TARGET_RATIO (77.4% der Schuesse auf ein Ziel gerichtet),0,0.026780162816365,0
+session_2026-08-14_14-33-46.csv,MBurgerPC-C08954A945,Maxi,0,,25.0,ON_TARGET_RATIO (83.3% der Schuesse auf ein Ziel gerichtet),0,0.0230293120999881,0
+session_2026-08-14_14-33-46.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (64.2% der Schuesse auf ein Ziel gerichtet),0,0.1253072134617077,0
+session_2026-08-14_14-33-46.csv,Stacjonarny-CA89EB15,Mateusz,1,aimbot+triggerbot,25.0,ON_TARGET_RATIO (70.0% der Schuesse auf ein Ziel gerichtet),0,0.0917838518580775,0
+session_2026-08-14_14-33-46.csv,RF-MS1-1-EF024FED46C,Nikolay,1,aimbot+wallhack+triggerbot+godmode,100.0,"AIM_SNAPPING (2.00% flips); ON_TARGET_RATIO (66.7% der Schuesse auf ein Ziel gerichtet); GOD_MODE (28 Kills, 0 Deaths)",1,0.7821349908320461,1
+session_2026-08-14_14-33-46.csv,LAPTOP-IN41KCMK-5468,Clemi,0,,60.0,"AIMBOT_PRECISION (4.29 deg mean error, n=27); ON_TARGET_RATIO (77.1% der Schuesse auf ein Ziel gerichtet)",1,0.1580504626119827,0
+session_2026-08-14_14-40-47.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (69.4% der Schuesse auf ein Ziel gerichtet),0,0.0470206826880004,0
+session_2026-08-14_14-40-47.csv,MBurgerPC-C08954A945,Maxi,0,,25.0,ON_TARGET_RATIO (84.1% der Schuesse auf ein Ziel gerichtet),0,0.0227702467072734,0
+session_2026-08-14_14-40-47.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (76.1% der Schuesse auf ein Ziel gerichtet),0,0.1342625472154037,0
+session_2026-08-14_14-40-47.csv,LAPTOP-IN41KCMK-5468,Clemi,0,,60.0,"AIMBOT_PRECISION (5.97 deg mean error, n=228); ON_TARGET_RATIO (78.4% der Schuesse auf ein Ziel gerichtet)",1,0.0674696157294046,0
+session_2026-08-14_14-43-37.csv,Phileas-PC-167800BF4,Phileas,1,aimbot,60.0,"AIMBOT_PRECISION (4.51 deg mean error, n=183); ON_TARGET_RATIO (74.4% der Schuesse auf ein Ziel gerichtet)",1,0.5727292989606675,1
+session_2026-08-14_14-43-37.csv,MBurgerPC-C08954A945,Maxi,0,,25.0,ON_TARGET_RATIO (58.8% der Schuesse auf ein Ziel gerichtet),0,0.0132583356828334,0
+session_2026-08-14_14-43-37.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (70.3% der Schuesse auf ein Ziel gerichtet),0,0.092645269088378,0
+session_2026-08-14_14-43-37.csv,LAPTOP-IN41KCMK-5468,Clemi,0,,25.0,ON_TARGET_RATIO (69.6% der Schuesse auf ein Ziel gerichtet),0,0.0054601263990782,0
+session_2026-08-14_14-43-37.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (72.2% der Schuesse auf ein Ziel gerichtet),0,0.0481897498293316,0
+session_2026-08-14_14-46-27.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (86.0% der Schuesse auf ein Ziel gerichtet),0,0.0303610547567546,0
+session_2026-08-14_14-46-27.csv,MBurgerPC-C08954A945,Maxi,0,,25.0,ON_TARGET_RATIO (77.9% der Schuesse auf ein Ziel gerichtet),0,0.1194200980231166,0
+session_2026-08-14_14-46-27.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (77.6% der Schuesse auf ein Ziel gerichtet),0,0.0572646129934377,0
+session_2026-08-14_14-46-27.csv,LAPTOP-IN41KCMK-5468,Clemi,0,,25.0,ON_TARGET_RATIO (88.0% der Schuesse auf ein Ziel gerichtet),0,0.0344344670959672,0
+session_2026-08-14_14-46-27.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (69.9% der Schuesse auf ein Ziel gerichtet),0,0.0873898167924075,0
+session_2026-08-14_14-52-07.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (85.1% der Schuesse auf ein Ziel gerichtet),0,0.0077967960032892,0
+session_2026-08-14_14-52-07.csv,MBurgerPC-C08954A945,Maxi,0,,25.0,ON_TARGET_RATIO (97.7% der Schuesse auf ein Ziel gerichtet),0,0.0255657718333352,0
+session_2026-08-14_14-52-07.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (74.8% der Schuesse auf ein Ziel gerichtet),0,0.046267777682841,0
+session_2026-08-14_14-52-07.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (74.4% der Schuesse auf ein Ziel gerichtet),0,0.1457266524489274,0
+session_2026-08-14_14-52-07.csv,LAPTOP-IN41KCMK-5468,Clemi,0,,30.0,MECHANICAL_AUTOFIRE (std: 14.2ms),0,0.0867036763553615,0
+session_2026-08-14_14-54-57.csv,Phileas-PC-167800BF4,Phileas,1,wallhack,25.0,ON_TARGET_RATIO (77.0% der Schuesse auf ein Ziel gerichtet),0,0.0227743711028064,0
+session_2026-08-14_14-54-57.csv,MBurgerPC-C08954A945,Maxi,0,,25.0,ON_TARGET_RATIO (67.4% der Schuesse auf ein Ziel gerichtet),0,0.0033564593301435,0
+session_2026-08-14_14-54-57.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (78.5% der Schuesse auf ein Ziel gerichtet),0,0.0233833927961557,0
+session_2026-08-14_14-54-57.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (76.1% der Schuesse auf ein Ziel gerichtet),0,0.1021314454765889,0
+session_2026-08-14_14-54-57.csv,LAPTOP-IN41KCMK-5468,Clemi,0,,25.0,ON_TARGET_RATIO (73.8% der Schuesse auf ein Ziel gerichtet),0,0.0307927357740433,0
+session_2026-08-14_14-57-47.csv,LAPTOP-IN41KCMK-5468,Clemi,0,,25.0,ON_TARGET_RATIO (87.3% der Schuesse auf ein Ziel gerichtet),0,0.1203804763509071,0
+session_2026-08-14_14-57-47.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (84.1% der Schuesse auf ein Ziel gerichtet),0,0.1374561015439289,0
+session_2026-08-14_14-57-47.csv,MBurgerPC-C08954A945,Maxi,0,,25.0,ON_TARGET_RATIO (72.0% der Schuesse auf ein Ziel gerichtet),0,0.212377257971754,1
+session_2026-08-14_14-57-47.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (66.1% der Schuesse auf ein Ziel gerichtet),0,0.1174879239947566,0
+session_2026-08-14_14-57-47.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (81.6% der Schuesse auf ein Ziel gerichtet),0,0.067551198124364,0
+session_2026-08-14_15-10-30.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (71.4% der Schuesse auf ein Ziel gerichtet),0,0.1322483277337187,0
+session_2026-08-14_15-10-30.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (74.1% der Schuesse auf ein Ziel gerichtet),0,0.0633590484050488,0
+session_2026-08-14_15-10-30.csv,Stacjonarny-CA89EB15,Mateusz,0,,60.0,"AIMBOT_PRECISION (5.06 deg mean error, n=128); ON_TARGET_RATIO (77.6% der Schuesse auf ein Ziel gerichtet)",1,0.1871878138062392,1
+session_2026-08-14_15-10-30.csv,MBurgerPC-1F26792842,Maxi,0,,25.0,ON_TARGET_RATIO (74.2% der Schuesse auf ein Ziel gerichtet),0,0.0424962137871995,0
+session_2026-08-14_15-13-20.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (78.2% der Schuesse auf ein Ziel gerichtet),0,0.0437420883319536,0
+session_2026-08-14_15-13-20.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (70.1% der Schuesse auf ein Ziel gerichtet),0,0.0886797060954252,0
+session_2026-08-14_15-13-20.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (71.0% der Schuesse auf ein Ziel gerichtet),0,0.0504621104181053,0
+session_2026-08-14_15-13-20.csv,MBurgerPC-1F26792842,Maxi,1,aimbot+triggerbot,25.0,ON_TARGET_RATIO (74.0% der Schuesse auf ein Ziel gerichtet),0,0.0108514527883517,0
+session_2026-08-14_15-16-10.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (85.1% der Schuesse auf ein Ziel gerichtet),0,0.1206361632789833,0
+session_2026-08-14_15-16-10.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (76.9% der Schuesse auf ein Ziel gerichtet),0,0.1059450811663862,0
+session_2026-08-14_15-16-10.csv,Stacjonarny-CA89EB15,Mateusz,0,,60.0,"AIMBOT_PRECISION (5.99 deg mean error, n=198); ON_TARGET_RATIO (73.3% der Schuesse auf ein Ziel gerichtet)",1,0.0232417303752606,0
+session_2026-08-14_15-16-10.csv,MBurgerPC-1F26792842,Maxi,0,,60.0,"AIMBOT_PRECISION (5.75 deg mean error, n=132); ON_TARGET_RATIO (88.6% der Schuesse auf ein Ziel gerichtet)",1,0.0963452593838344,0
+session_2026-08-14_15-19-00.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (81.5% der Schuesse auf ein Ziel gerichtet),0,0.0499031153141241,0
+session_2026-08-14_15-19-00.csv,MBurgerPC-1F26792842,Maxi,0,,25.0,ON_TARGET_RATIO (85.6% der Schuesse auf ein Ziel gerichtet),0,0.004965052481661,0
+session_2026-08-14_15-19-00.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (70.2% der Schuesse auf ein Ziel gerichtet),0,0.0160295397542282,0
+session_2026-08-14_15-19-00.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (82.8% der Schuesse auf ein Ziel gerichtet),0,0.0617937309308348,0
+session_2026-08-14_15-21-50.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (81.4% der Schuesse auf ein Ziel gerichtet),0,0.0646774981617041,0
+session_2026-08-14_15-21-50.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (58.7% der Schuesse auf ein Ziel gerichtet),0,0.095920500640678,0
+session_2026-08-14_15-21-50.csv,Stacjonarny-CA89EB15,Mateusz,1,aimbot+wallhack+triggerbot+godmode,25.0,ON_TARGET_RATIO (88.0% der Schuesse auf ein Ziel gerichtet),0,0.5989089727643678,1
+session_2026-08-14_15-24-40.csv,Phileas-PC-167800BF4,Phileas,0,,90.0,"AIMBOT_PRECISION (5.94 deg mean error, n=251); ON_TARGET_RATIO (77.2% der Schuesse auf ein Ziel gerichtet); SPEED_LIMIT_EXCEEDED (1580.8 cm/s)",1,0.0758952330718264,0
+session_2026-08-14_15-24-40.csv,MBurgerPC-1F26792842,Maxi,0,,25.0,ON_TARGET_RATIO (84.1% der Schuesse auf ein Ziel gerichtet),0,0.0198048690744189,0
+session_2026-08-14_15-24-40.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (63.2% der Schuesse auf ein Ziel gerichtet),0,0.0484357438423301,0
+session_2026-08-14_15-24-40.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (85.7% der Schuesse auf ein Ziel gerichtet),0,0.0556779358708173,0
+session_2026-08-14_15-37-31.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (81.0% der Schuesse auf ein Ziel gerichtet),0,0.0028566054497154,0
+session_2026-08-14_15-37-31.csv,MBurgerPC-C8AB03D241,Maxi,0,,25.0,ON_TARGET_RATIO (73.4% der Schuesse auf ein Ziel gerichtet),0,0.0493066343083035,0
+session_2026-08-14_15-37-31.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (78.9% der Schuesse auf ein Ziel gerichtet),0,0.0743333326445788,0
+session_2026-08-14_15-37-31.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (66.3% der Schuesse auf ein Ziel gerichtet),0,0.0315721387446939,0
+session_2026-08-14_15-40-21.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (71.8% der Schuesse auf ein Ziel gerichtet),0,0.0446838256424201,0
+session_2026-08-14_15-40-21.csv,MBurgerPC-C8AB03D241,Maxi,0,,25.0,ON_TARGET_RATIO (70.7% der Schuesse auf ein Ziel gerichtet),0,0.1864986717344907,1
+session_2026-08-14_15-40-21.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (74.0% der Schuesse auf ein Ziel gerichtet),0,0.0518664688002994,0
+session_2026-08-14_15-40-21.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (75.3% der Schuesse auf ein Ziel gerichtet),0,0.0280873146174879,0
+session_2026-08-14_15-43-11.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (80.8% der Schuesse auf ein Ziel gerichtet),0,0.0792331773978763,0
+session_2026-08-14_15-43-11.csv,MBurgerPC-C8AB03D241,Maxi,0,,0.0,,0,0.0682627806000365,0
+session_2026-08-14_15-43-11.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (67.9% der Schuesse auf ein Ziel gerichtet),0,0.0559516749900588,0
+session_2026-08-14_15-43-11.csv,Stacjonarny-CA89EB15,Mateusz,0,,60.0,"AIMBOT_PRECISION (5.56 deg mean error, n=136); ON_TARGET_RATIO (79.1% der Schuesse auf ein Ziel gerichtet)",1,0.2186074752143363,1
+session_2026-08-15_18-26-35.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (69.8% der Schuesse auf ein Ziel gerichtet),0,0.1951413008713177,1
+session_2026-08-15_18-26-35.csv,MBurgerPC-C08954A945,Maxi,0,,25.0,ON_TARGET_RATIO (68.8% der Schuesse auf ein Ziel gerichtet),0,0.1278907648913256,0
+session_2026-08-15_18-26-35.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (69.7% der Schuesse auf ein Ziel gerichtet),0,0.0350289726040959,0
+session_2026-08-15_18-26-35.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (71.1% der Schuesse auf ein Ziel gerichtet),0,0.1305174887065829,0
+session_2026-08-15_18-29-25.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (66.2% der Schuesse auf ein Ziel gerichtet),0,0.0462620258914408,0
+session_2026-08-15_18-29-25.csv,MBurgerPC-C08954A945,Maxi,1,aimbot+triggerbot,25.0,ON_TARGET_RATIO (83.7% der Schuesse auf ein Ziel gerichtet),0,0.2556460640062203,1
+session_2026-08-15_18-29-25.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (75.5% der Schuesse auf ein Ziel gerichtet),0,0.0817260597929104,0
+session_2026-08-15_18-29-25.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (60.4% der Schuesse auf ein Ziel gerichtet),0,0.0705769499111934,0
+session_2026-08-15_18-32-15.csv,MBurgerPC-C08954A945,Maxi,0,,25.0,ON_TARGET_RATIO (60.7% der Schuesse auf ein Ziel gerichtet),0,0.0200154710060692,0
+session_2026-08-15_18-32-15.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (50.8% der Schuesse auf ein Ziel gerichtet),0,0.0824258127328603,0
+session_2026-08-15_18-32-15.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (65.4% der Schuesse auf ein Ziel gerichtet),0,0.1044191040493196,0
+session_2026-08-15_18-32-15.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (66.5% der Schuesse auf ein Ziel gerichtet),0,0.0504012271205636,0
+session_2026-08-15_18-35-05.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (71.9% der Schuesse auf ein Ziel gerichtet),0,0.0366719094050614,0
+session_2026-08-15_18-35-05.csv,MBurgerPC-C08954A945,Maxi,0,,25.0,ON_TARGET_RATIO (63.9% der Schuesse auf ein Ziel gerichtet),0,0.0432496004660399,0
+session_2026-08-15_18-35-05.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (50.7% der Schuesse auf ein Ziel gerichtet),0,0.1793240842720928,1
+session_2026-08-15_18-35-05.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (69.6% der Schuesse auf ein Ziel gerichtet),0,0.1682737859893698,0
+session_2026-08-15_18-41-02.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (77.7% der Schuesse auf ein Ziel gerichtet),0,0.1218927144623889,0
+session_2026-08-15_18-41-02.csv,Stacjonarny-CA89EB15,Mateusz,0,,60.0,"AIMBOT_PRECISION (4.22 deg mean error, n=217); ON_TARGET_RATIO (65.2% der Schuesse auf ein Ziel gerichtet)",1,0.0531630759597782,0
+session_2026-08-15_18-41-02.csv,MBurgerPC-C08954A945,Maxi,0,,90.0,"MECHANICAL_AUTOFIRE (std: 3.4ms); AIMBOT_PRECISION (3.37 deg mean error, n=96); ON_TARGET_RATIO (100.0% der Schuesse auf ein Ziel gerichtet)",1,0.0534842256980407,0
+session_2026-08-15_18-41-02.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (76.3% der Schuesse auf ein Ziel gerichtet),0,0.1017859792019907,0
+session_2026-08-15_18-43-52.csv,Phileas-PC-167800BF4,Phileas,1,triggerbot,60.0,"AIMBOT_PRECISION (3.82 deg mean error, n=153); ON_TARGET_RATIO (88.4% der Schuesse auf ein Ziel gerichtet)",1,0.1729951802495908,1
+session_2026-08-15_18-43-52.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (79.0% der Schuesse auf ein Ziel gerichtet),0,0.0588767012606145,0
+session_2026-08-15_18-43-52.csv,MBurgerPC-C08954A945,Maxi,0,,25.0,ON_TARGET_RATIO (62.7% der Schuesse auf ein Ziel gerichtet),0,0.0253954408988377,0
+session_2026-08-15_18-43-52.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (57.9% der Schuesse auf ein Ziel gerichtet),0,0.0307857495206959,0
+session_2026-08-15_18-46-42.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (65.1% der Schuesse auf ein Ziel gerichtet),0,0.1053435214731374,0
+session_2026-08-15_18-46-42.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (70.9% der Schuesse auf ein Ziel gerichtet),0,0.021638455260193,0
+session_2026-08-15_18-46-42.csv,MBurgerPC-C08954A945,Maxi,0,,25.0,ON_TARGET_RATIO (73.5% der Schuesse auf ein Ziel gerichtet),0,0.0105593428293199,0
+session_2026-08-15_18-46-42.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (59.6% der Schuesse auf ein Ziel gerichtet),0,0.1434196706209828,0
+session_2026-08-15_18-49-33.csv,Stacjonarny-CA89EB15,Mateusz,0,,55.0,MECHANICAL_AUTOFIRE (std: 2.6ms); ON_TARGET_RATIO (67.7% der Schuesse auf ein Ziel gerichtet),1,0.08571583781139,0
+session_2026-08-15_18-49-33.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (81.4% der Schuesse auf ein Ziel gerichtet),0,0.054989446910396,0
+session_2026-08-15_18-49-33.csv,MBurgerPC-C08954A945,Maxi,1,aimbot+triggerbot,25.0,ON_TARGET_RATIO (82.2% der Schuesse auf ein Ziel gerichtet),0,0.5042276324497169,1
+session_2026-08-15_18-49-33.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (72.2% der Schuesse auf ein Ziel gerichtet),0,0.1542615058214143,0
+session_2026-08-15_18-52-23.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (69.6% der Schuesse auf ein Ziel gerichtet),0,0.0541667883471816,0
+session_2026-08-15_18-52-23.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (79.9% der Schuesse auf ein Ziel gerichtet),0,0.0294797926512636,0
+session_2026-08-15_18-52-23.csv,MBurgerPC-C08954A945,Maxi,0,,25.0,ON_TARGET_RATIO (74.3% der Schuesse auf ein Ziel gerichtet),0,0.0040128106258333,0
+session_2026-08-15_18-52-23.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (79.6% der Schuesse auf ein Ziel gerichtet),0,0.0351719685347603,0
+session_2026-08-15_18-58-29.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (76.9% der Schuesse auf ein Ziel gerichtet),0,0.0313695304935477,0
+session_2026-08-15_18-58-29.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (79.5% der Schuesse auf ein Ziel gerichtet),0,0.0505990298358871,0
+session_2026-08-15_18-58-29.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (74.4% der Schuesse auf ein Ziel gerichtet),0,0.0501935230811423,0
+session_2026-08-15_18-58-29.csv,MBurgerPC-C08954A945,Maxi,0,,25.0,ON_TARGET_RATIO (81.9% der Schuesse auf ein Ziel gerichtet),0,0.0255069019109718,0
+session_2026-08-15_19-01-19.csv,Phileas-PC-167800BF4,Phileas,1,aimbot,50.0,AIM_SNAPPING (1.24% flips); ON_TARGET_RATIO (69.5% der Schuesse auf ein Ziel gerichtet),1,0.6899709362911611,1
+session_2026-08-15_19-01-19.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (51.7% der Schuesse auf ein Ziel gerichtet),0,0.1347007463494738,0
+session_2026-08-15_19-01-19.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (60.2% der Schuesse auf ein Ziel gerichtet),0,0.063199121942777,0
+session_2026-08-15_19-01-19.csv,MBurgerPC-C08954A945,Maxi,0,,25.0,ON_TARGET_RATIO (62.9% der Schuesse auf ein Ziel gerichtet),0,0.0146612234630967,0
+session_2026-08-15_19-04-09.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (64.0% der Schuesse auf ein Ziel gerichtet),0,0.0483643446121898,0
+session_2026-08-15_19-04-09.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (54.4% der Schuesse auf ein Ziel gerichtet),0,0.0418628458105026,0
+session_2026-08-15_19-04-09.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (56.6% der Schuesse auf ein Ziel gerichtet),0,0.1033541268128195,0
+session_2026-08-15_19-04-09.csv,MBurgerPC-C08954A945,Maxi,0,,25.0,ON_TARGET_RATIO (65.1% der Schuesse auf ein Ziel gerichtet),0,0.0087205188502853,0
+session_2026-08-15_19-06-59.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (63.3% der Schuesse auf ein Ziel gerichtet),0,0.0171180347810024,0
+session_2026-08-15_19-06-59.csv,RF-MS1-1-EF024FED46C,Nikolay,1,godmode+aimbot,50.0,AIM_SNAPPING (2.47% flips); ON_TARGET_RATIO (63.6% der Schuesse auf ein Ziel gerichtet),1,0.6345011012398774,1
+session_2026-08-15_19-06-59.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (75.5% der Schuesse auf ein Ziel gerichtet),0,0.073141519088902,0
+session_2026-08-15_19-06-59.csv,MBurgerPC-C08954A945,Maxi,0,,25.0,ON_TARGET_RATIO (82.7% der Schuesse auf ein Ziel gerichtet),0,0.0254175934091185,0
+session_2026-08-15_19-09-49.csv,Phileas-PC-167800BF4,Phileas,0,,60.0,"AIMBOT_PRECISION (5.69 deg mean error, n=227); ON_TARGET_RATIO (73.9% der Schuesse auf ein Ziel gerichtet)",1,0.0567087808585635,0
+session_2026-08-15_19-09-49.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (73.8% der Schuesse auf ein Ziel gerichtet),0,0.0571556931665557,0
+session_2026-08-15_19-09-49.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (55.1% der Schuesse auf ein Ziel gerichtet),0,0.0806231319231971,0
+session_2026-08-15_19-09-49.csv,MBurgerPC-C08954A945,Maxi,0,,25.0,ON_TARGET_RATIO (64.0% der Schuesse auf ein Ziel gerichtet),0,0.0015,0
+session_2026-08-15_19-13-05.csv,MBurgerPC-C08954A945,Maxi,1,aimbot+wallhack+triggerbot+godmode,50.0,AIM_SNAPPING (1.17% flips); ON_TARGET_RATIO (89.4% der Schuesse auf ein Ziel gerichtet),1,0.6829180270313355,1
+session_2026-08-15_19-13-05.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (51.1% der Schuesse auf ein Ziel gerichtet),0,0.0222386338419931,0
+session_2026-08-15_19-13-05.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (71.7% der Schuesse auf ein Ziel gerichtet),0,0.7403908053770578,1
+session_2026-08-15_19-13-05.csv,Phileas-PC-167800BF4,Phileas,0,,90.0,"MECHANICAL_AUTOFIRE (std: 9.9ms); AIMBOT_PRECISION (4.41 deg mean error, n=68); ON_TARGET_RATIO (98.6% der Schuesse auf ein Ziel gerichtet)",1,0.2601587854139097,1
+session_2026-08-15_19-15-55.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (79.6% der Schuesse auf ein Ziel gerichtet),0,0.0768221167043796,0
+session_2026-08-15_19-15-55.csv,MBurgerPC-C08954A945,Maxi,0,,25.0,ON_TARGET_RATIO (64.9% der Schuesse auf ein Ziel gerichtet),0,0.0112684910840901,0
+session_2026-08-15_19-15-55.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (73.9% der Schuesse auf ein Ziel gerichtet),0,0.0468552372278294,0
+session_2026-08-15_19-21-11.csv,Phileas-PC-167800BF4,Phileas,1,wallhack,25.0,ON_TARGET_RATIO (75.1% der Schuesse auf ein Ziel gerichtet),0,0.2925663337076899,1
+session_2026-08-15_19-21-11.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (76.7% der Schuesse auf ein Ziel gerichtet),0,0.034606875844289,0
+session_2026-08-15_19-21-11.csv,MBurgerPC-C08954A945,Maxi,0,,25.0,ON_TARGET_RATIO (76.2% der Schuesse auf ein Ziel gerichtet),0,0.0411523634668505,0
+session_2026-08-15_19-21-11.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (71.8% der Schuesse auf ein Ziel gerichtet),0,0.1652163526648533,0
+session_2026-08-15_19-24-01.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (77.3% der Schuesse auf ein Ziel gerichtet),0,0.1138878549460369,0
+session_2026-08-15_19-24-01.csv,RF-MS1-1-EF024FED46C,Nikolay,0,,25.0,ON_TARGET_RATIO (62.5% der Schuesse auf ein Ziel gerichtet),0,0.0840239263655177,0
+session_2026-08-15_19-24-01.csv,MBurgerPC-C08954A945,Maxi,0,,25.0,ON_TARGET_RATIO (76.6% der Schuesse auf ein Ziel gerichtet),0,0.102840664490046,0
+session_2026-08-15_19-24-01.csv,Stacjonarny-CA89EB15,Mateusz,0,,25.0,ON_TARGET_RATIO (59.4% der Schuesse auf ein Ziel gerichtet),0,0.0597337712493658,0
+session_2026-08-15_19-26-51.csv,Phileas-PC-167800BF4,Phileas,0,,25.0,ON_TARGET_RATIO (80.3% der Schuesse auf ein Ziel gerichtet),0,0.1425952789263124,0
+session_2026-08-15_19-26-51.csv,RF-MS1-1-EF024FED46C,Nikolay,1,godmode,25.0,ON_TARGET_RATIO (49.4% der Schuesse auf ein Ziel gerichtet),0,0.1907069576556394,1
+session_2026-08-15_19-26-51.csv,MBurgerPC-C08954A945,Maxi,0,,60.0,"AIMBOT_PRECISION (4.89 deg mean error, n=43); ON_TARGET_RATIO (82.7% der Schuesse auf ein Ziel gerichtet)",1,0.0487318041062998,0
+session_2026-08-15_19-26-51.csv,Stacjonarny-CA89EB15,Mateusz,1,godmode,25.0,ON_TARGET_RATIO (66.9% der Schuesse auf ein Ziel gerichtet),0,0.365054651116747,1

@@ -21,6 +21,12 @@ Ausgabe: training_data.csv (im selben Ordner)
 """
 
 import numpy as np
+# Windows-Konsole nutzt standardmaessig cp1252 und bricht bei Zeichen wie
+# tau, lambda oder Pfeilen mit UnicodeEncodeError ab. UTF-8 erzwingen,
+# damit die mathematische Notation in der Ausgabe erhalten bleibt.
+import sys
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
 import pandas as pd
 
 SEED = 42
@@ -73,6 +79,9 @@ def gen_casual(n):
     rows["KillDeathRatio"] = clip(rng.normal(0.8,  0.45, n), 0.05, 3.5)
 
     total_shots = rng.integers(10, 180, n)
+    # Anteil Schuesse mit Ziel im Kegel (gemessen: Mensch ~0.20, Aimbot ~0.66-0.80)
+    on_target = clip(rng.normal(0.2, 0.06, n), 0.02, 0.95)
+    rows["AimErrorSampleCount"] = (total_shots * on_target).astype(int)
     rows["TotalShots"]  = total_shots
     rows["TotalHits"]   = (total_shots * rows["HitRate"]).astype(int)
     rows["TotalKills"]  = rng.integers(0, 12, n)
@@ -115,6 +124,9 @@ def gen_skilled(n):
     rows["KillDeathRatio"] = clip(rng.normal(1.6,  0.7,  n), 0.1,  5.5)
 
     total_shots = rng.integers(20, 200, n)
+    # Anteil Schuesse mit Ziel im Kegel (gemessen: Mensch ~0.20, Aimbot ~0.66-0.80)
+    on_target = clip(rng.normal(0.28, 0.07, n), 0.02, 0.95)
+    rows["AimErrorSampleCount"] = (total_shots * on_target).astype(int)
     rows["TotalShots"]  = total_shots
     rows["TotalHits"]   = (total_shots * rows["HitRate"]).astype(int)
     rows["TotalKills"]  = rng.integers(2, 20, n)
@@ -161,6 +173,9 @@ def gen_esport(n):
     rows["KillDeathRatio"] = clip(rng.normal(3.5,  1.5,  n), 0.8, 8.5)
 
     total_shots = rng.integers(30, 200, n)
+    # Anteil Schuesse mit Ziel im Kegel (gemessen: Mensch ~0.20, Aimbot ~0.66-0.80)
+    on_target = clip(rng.normal(0.35, 0.08, n), 0.02, 0.95)
+    rows["AimErrorSampleCount"] = (total_shots * on_target).astype(int)
     rows["TotalShots"]  = total_shots
     rows["TotalHits"]   = (total_shots * rows["HitRate"]).astype(int)
     rows["TotalKills"]  = rng.integers(5, 35, n)
@@ -206,6 +221,9 @@ def gen_aimbot(n):
     rows["KillDeathRatio"] = clip(rng.normal(7.0,  2.5,  n), 2.5, 18.0)
 
     total_shots = rng.integers(30, 160, n)
+    # Anteil Schuesse mit Ziel im Kegel (gemessen: Mensch ~0.20, Aimbot ~0.66-0.80)
+    on_target = clip(rng.normal(0.7, 0.09, n), 0.02, 0.95)
+    rows["AimErrorSampleCount"] = (total_shots * on_target).astype(int)
     rows["TotalShots"]  = total_shots
     rows["TotalHits"]   = (total_shots * rows["HitRate"]).astype(int)
     rows["TotalKills"]  = rng.integers(10, 40, n)
@@ -249,6 +267,9 @@ def gen_speedhack(n):
     rows["KillDeathRatio"] = clip(rng.normal(2.8,  1.1,  n), 0.4,  7.0)
 
     total_shots = rng.integers(15, 180, n)
+    # Anteil Schuesse mit Ziel im Kegel (gemessen: Mensch ~0.20, Aimbot ~0.66-0.80)
+    on_target = clip(rng.normal(0.2, 0.06, n), 0.02, 0.95)
+    rows["AimErrorSampleCount"] = (total_shots * on_target).astype(int)
     rows["TotalShots"]  = total_shots
     rows["TotalHits"]   = (total_shots * rows["HitRate"]).astype(int)
     rows["TotalKills"]  = rng.integers(5, 28, n)
@@ -293,6 +314,9 @@ def gen_triggerbot(n):
     rows["KillDeathRatio"] = clip(rng.normal(4.2,  1.8,  n), 0.8, 11.0)
 
     total_shots = rng.integers(20, 170, n)
+    # Anteil Schuesse mit Ziel im Kegel (gemessen: Mensch ~0.20, Aimbot ~0.66-0.80)
+    on_target = clip(rng.normal(0.55, 0.1, n), 0.02, 0.95)
+    rows["AimErrorSampleCount"] = (total_shots * on_target).astype(int)
     rows["TotalShots"]  = total_shots
     rows["TotalHits"]   = (total_shots * rows["HitRate"]).astype(int)
     rows["TotalKills"]  = rng.integers(8, 38, n)
@@ -318,7 +342,8 @@ df = df.sample(frac=1, random_state=SEED).reset_index(drop=True)
 col_order = [
     "PlayerID", "SessionDurationSeconds",
     "AimAngularSpeedMean", "AimAngularSpeedStdDev",
-    "AimAngularErrorMean", "AimAngularErrorStdDev", "AimFlipRatio",
+    "AimAngularErrorMean", "AimAngularErrorStdDev",
+    "AimErrorSampleCount", "AimFlipRatio",
     "MovementSpeedMean", "MovementSpeedMax",
     "DirectionChangesPerSecond", "SpeedViolationRatio", "MovementPathEntropy",
     "ReactionTimeMean", "ReactionTimeStdDev",
@@ -333,7 +358,7 @@ import os
 output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "training_data.csv")
 df.to_csv(output_path, index=False, float_format="%.4f")
 
-print(f"✅ Datensatz generiert: {output_path}")
+print(f"[OK] Datensatz generiert: {output_path}")
 print(f"   Gesamt:          {len(df)} Spieler")
 print(f"   Legitim:         {(df.Label == 0).sum()} ({(df.Label==0).mean()*100:.1f}%)")
 print(f"     - Casual:      {N_CASUAL}")

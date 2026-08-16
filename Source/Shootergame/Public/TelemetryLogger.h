@@ -41,6 +41,12 @@ struct FPlayerSessionData
     UPROPERTY(BlueprintReadWrite, Category = "Telemetry|Aim")
     float AimAngularErrorStdDev;
 
+    // Number of shots that produced an angular error sample (target visible in cone).
+    // Needed to tell "perfect aim" (error ~0) apart from "never shot at anyone"
+    // (error also 0, because there were no samples at all).
+    UPROPERTY(BlueprintReadWrite, Category = "Telemetry|Aim")
+    int32 AimErrorSampleCount;
+
     // Ratio of abrupt aim direction flips (>90 degrees in one tick)
     UPROPERTY(BlueprintReadWrite, Category = "Telemetry|Aim")
     float AimFlipRatio;
@@ -128,6 +134,7 @@ struct FPlayerSessionData
         : SessionDurationSeconds(0.f)
         , AimAngularSpeedMean(0.f), AimAngularSpeedStdDev(0.f)
         , AimAngularErrorMean(0.f), AimAngularErrorStdDev(0.f)
+        , AimErrorSampleCount(0)
         , AimFlipRatio(0.f)
         , MovementSpeedMean(0.f), MovementSpeedMax(0.f)
         , DirectionChangesPerSecond(0.f), SpeedViolationRatio(0.f)

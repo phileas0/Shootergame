@@ -76,3 +76,12 @@ UpgradeLog.htm
 Source/BLUEPRINT_INTEGRATION.md
 BACHELORARBEIT2_VORLAGE.docx
 /BA2
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Arbeitsdateien, gehoeren nicht ins Repository
+CONTEXT_FOR_OPUS5.txt

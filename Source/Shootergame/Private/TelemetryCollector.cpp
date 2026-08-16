@@ -10,6 +10,7 @@
 #include "Algo/MaxElement.h"
 #include "DrawDebugHelpers.h"
 #include "Engine/World.h"
+#include "EngineUtils.h"
 #include "ShooterGameState.h"
 #include "ShooterPlayerState.h"
 
@@ -22,6 +23,7 @@ UTelemetryCollector::UTelemetryCollector()
     SamplingInterval    = 0.1f;
     EnemyCheckInterval  = 0.2f;
     EnemyCheckDistance  = 5000.f;
+    AimErrorMaxAngle    = 45.f;
 
     // Default headshot bone names — covers most UE5 humanoid skeletons
     HeadshotBoneNames = { TEXT("head"), TEXT("Head"), TEXT("HEAD"), TEXT("neck_01"), TEXT("neck_02") };
@@ -39,8 +41,11 @@ UTelemetryCollector::UTelemetryCollector()
     LastShotTimestamp       = -1.f;
     LastEnemyCheckTime      = 0.f;
     AimFlipCount            = 0;
+    AimErrorSampleCount     = 0;
     DirectionChangeCount    = 0;
     SpeedViolationCount     = 0;
+    bHasAimReference        = false;
+    bHasMoveReference       = false;
 
     TotalShots     = 0;
     TotalHits      = 0;
@@ -135,24 +140,42 @@ void UTelemetryCollector::TickComponent(float DeltaTime, ELevelTick TickType,
     FVector CurrentViewDir = Owner->GetBaseAimRotation().Vector();
     CurrentViewDir.Normalize();
 
-    float AngleDelta = FMath::Acos(
-        FMath::Clamp(FVector::DotProduct(LastViewDirection, CurrentViewDir), -1.f, 1.f)
-    );
-    float AngleDeltaDeg = FMath::RadiansToDegrees(AngleDelta);
-    float AngularSpeed  = AngleDeltaDeg / FMath::Max(DeltaTime, KINDA_SMALL_NUMBER);
-    AimAngularSpeeds.Add(AngularSpeed);
-
-    if (AngleDeltaDeg > 90.f)
+    if (!bHasAimReference)
     {
-        AimFlipCount++;
+        // Erster Tick dieses Pawns: nur die Referenz setzen, keine Differenz werten.
+        // Andernfalls würde der Sprung vom Default-Vorwärtsvektor auf die echte
+        // Blickrichtung nach jedem Respawn als Aim-Flip gezählt.
+        LastViewDirection = CurrentViewDir;
+        bHasAimReference  = true;
     }
-    LastViewDirection = CurrentViewDir;
+    else
+    {
+        float AngleDelta = FMath::Acos(
+            FMath::Clamp(FVector::DotProduct(LastViewDirection, CurrentViewDir), -1.f, 1.f)
+        );
+        float AngleDeltaDeg = FMath::RadiansToDegrees(AngleDelta);
+        float AngularSpeed  = AngleDeltaDeg / FMath::Max(DeltaTime, KINDA_SMALL_NUMBER);
+        AimAngularSpeeds.Add(AngularSpeed);
+
+        if (AngleDeltaDeg > 90.f)
+        {
+            AimFlipCount++;
+        }
+        LastViewDirection = CurrentViewDir;
+    }
 
     // ---- Movement sampling ----
     UCharacterMovementComponent* Movement = Owner->GetCharacterMovement();
     if (Movement)
     {
-        float Speed = Movement->Velocity.Size();
+        // Nur die horizontale Geschwindigkeit auswerten.
+        // Velocity.Size() würde die Z-Komponente einschließen: bei ~980 cm/s^2
+        // Gravitation überschreitet jeder Sprung/Fall nach knapp 0,6s das
+        // Bodenlimit von MaxLegalSpeed und erzeugt einen Scheinverstoß.
+        // Speedhacks wirken auf die Bodenbewegung — die Fallgeschwindigkeit ist
+        // für alle Spieler identisch und darf nicht als Verstoß zählen.
+        const FVector HorizontalVelocity(Movement->Velocity.X, Movement->Velocity.Y, 0.f);
+        const float Speed = HorizontalVelocity.Size();
         MovementSpeeds.Add(Speed);
 
         if (Speed > MaxLegalSpeed + 10.f)
@@ -160,16 +183,30 @@ void UTelemetryCollector::TickComponent(float DeltaTime, ELevelTick TickType,
             SpeedViolationCount++;
         }
 
-        FVector CurrentMoveDir = Movement->Velocity;
+        // Richtungswechsel ebenfalls in der Bodenebene messen: der Vorzeichen-
+        // wechsel von Velocity.Z am Sprungscheitel würde sonst als starke
+        // Richtungsänderung gewertet, obwohl die Laufrichtung gleich bleibt.
+        FVector CurrentMoveDir = HorizontalVelocity;
         if (CurrentMoveDir.SizeSquared() > 1.f)
         {
             CurrentMoveDir.Normalize();
-            float MoveAngleDelta = FMath::Acos(
-                FMath::Clamp(FVector::DotProduct(LastMoveDirection, CurrentMoveDir), -1.f, 1.f)
-            );
-            if (FMath::RadiansToDegrees(MoveAngleDelta) > 45.f)
+
+            // Wie beim Aim: erste Bewegung nach einem (Re-)Spawn nur als Referenz
+            // setzen, sonst zählt der Vergleich gegen den Default-Vorwärtsvektor
+            // als Richtungswechsel.
+            if (!bHasMoveReference)
             {
-                DirectionChangeCount++;
+                bHasMoveReference = true;
+            }
+            else
+            {
+                float MoveAngleDelta = FMath::Acos(
+                    FMath::Clamp(FVector::DotProduct(LastMoveDirection, CurrentMoveDir), -1.f, 1.f)
+                );
+                if (FMath::RadiansToDegrees(MoveAngleDelta) > 45.f)
+                {
+                    DirectionChangeCount++;
+                }
             }
 
             float HeadingAngle = FMath::Atan2(CurrentMoveDir.Y, CurrentMoveDir.X);
@@ -215,8 +252,11 @@ void UTelemetryCollector::ResetSession()
     LastShotTimestamp       = -1.f;
     LastEnemyCheckTime      = 0.f;
     AimFlipCount            = 0;
+    AimErrorSampleCount     = 0;
     DirectionChangeCount    = 0;
     SpeedViolationCount     = 0;
+    bHasAimReference        = false;
+    bHasMoveReference       = false;
 
     AimAngularSpeeds.Empty();
     AimAngularErrors.Empty();
@@ -243,6 +283,11 @@ void UTelemetryCollector::RecordShot()
 
     float Now = UGameplayStatics::GetTimeSeconds(GetWorld());
     TotalShots++;
+
+    // Winkelfehler zum Fadenkreuz-nächsten sichtbaren Ziel im Moment des Schusses.
+    // Kernmerkmal für Aimbot-Erkennung: menschliches Zielen streut, ein Aimbot
+    // liefert nahezu konstant ~0 Grad Abweichung.
+    SampleAimError();
 
     if (LastShotTimestamp > 0.f)
         ShotIntervals.Add(Now - LastShotTimestamp);
@@ -330,6 +375,7 @@ void UTelemetryCollector::MergeTelemetry(UTelemetryCollector* SourceCollector)
 
     // Merge counters
     AimFlipCount         += SourceCollector->AimFlipCount;
+    AimErrorSampleCount  += SourceCollector->AimErrorSampleCount;
     DirectionChangeCount += SourceCollector->DirectionChangeCount;
     SpeedViolationCount  += SourceCollector->SpeedViolationCount;
     TotalShots           += SourceCollector->TotalShots;
@@ -377,6 +423,7 @@ void UTelemetryCollector::FinalizeSession(UTelemetryLogger* Logger)
     float AimErrMean            = ComputeMean(AimAngularErrors);
     Data.AimAngularErrorMean    = AimErrMean;
     Data.AimAngularErrorStdDev  = ComputeStdDev(AimAngularErrors, AimErrMean);
+    Data.AimErrorSampleCount    = AimErrorSampleCount;
 
     int32 TotalSamples          = FMath::Max(AimAngularSpeeds.Num(), 1);
     Data.AimFlipRatio           = (float)AimFlipCount / (float)TotalSamples;
@@ -422,8 +469,10 @@ void UTelemetryCollector::FinalizeSession(UTelemetryLogger* Logger)
     Logger->LogSessionData(Data);
 
     UE_LOG(LogTemp, Log,
-        TEXT("[TelemetryCollector] Session finalized for %s: %.1fs, %d shots, %d kills, %d headshots, %d reaction samples"),
-        *PlayerID, SessionDuration, TotalShots, TotalKills, TotalHeadshots, ReactionTimes.Num());
+        TEXT("[TelemetryCollector] Session finalized for %s: %.1fs, %d shots, %d kills, %d headshots, "
+             "%d reaction samples, %d aim-error samples (mean %.2f Grad, std %.2f)"),
+        *PlayerID, SessionDuration, TotalShots, TotalKills, TotalHeadshots, ReactionTimes.Num(),
+        AimErrorSampleCount, Data.AimAngularErrorMean, Data.AimAngularErrorStdDev);
 }
 
 // ---- Private Helpers ----
@@ -502,6 +551,126 @@ void UTelemetryCollector::CheckEnemyLineOfSight()
             RecordEnemyVisible();
         }
     }
+}
+
+void UTelemetryCollector::SampleAimError()
+{
+    ACharacter* Owner = Cast<ACharacter>(GetOwner());
+    if (!Owner) return;
+
+    UWorld* World = GetWorld();
+    if (!World) return;
+
+    const FVector EyeLocation = Owner->GetPawnViewLocation();
+
+    // HINWEIS (Messgenauigkeit): GetBaseAimRotation() nutzt für entfernte Clients
+    // die replizierte RemoteViewPitch, die auf 1 Byte komprimiert ist (~1.4 Grad
+    // Auflösung im Pitch). Der Winkelfehler ist dadurch bei Remote-Clients
+    // grobkörniger als beim Listen-Server-Host. Für die Trennung
+    // Aimbot (~0 Grad) vs. Mensch (mehrere Grad) reicht die Auflösung aus.
+    FVector ViewDir = Owner->GetBaseAimRotation().Vector();
+    ViewDir.Normalize();
+
+    float BestAngleDeg = TNumericLimits<float>::Max();
+    bool  bFoundTarget = false;
+
+    for (TActorIterator<ACharacter> It(World); It; ++It)
+    {
+        ACharacter* Target = *It;
+        if (!IsValid(Target) || Target == Owner) continue;
+
+        // Ziele ohne Controller sind bereits tot / nicht mehr steuerbar
+        if (!Target->GetController()) continue;
+
+        const float Distance = FVector::Dist(Target->GetActorLocation(), EyeLocation);
+        if (Distance < KINDA_SMALL_NUMBER || Distance > EnemyCheckDistance) continue;
+
+        // Kleinsten Winkel über mehrere Körperpunkte bestimmen (Torso + Kopf).
+        // Würde nur gegen die Kapselmitte gemessen, erschiene ein auf den Kopf
+        // rastender Aimbot mit einem systematischen Versatz als "ungenau"
+        // (bei ~3,4 m Distanz rund 10 Grad — genau der Wert, der im Aimbot-Test
+        // gemessen wurde, während der Cheat nachweislich aktiv war).
+        TArray<FVector> AimPoints;
+        GetTargetAimPoints(Target, AimPoints);
+
+        float AngleDeg = TNumericLimits<float>::Max();
+        for (const FVector& AimPoint : AimPoints)
+        {
+            FVector ToPoint = AimPoint - EyeLocation;
+            if (!ToPoint.Normalize()) continue;
+
+            const float PointAngle = FMath::RadiansToDegrees(
+                FMath::Acos(FMath::Clamp(FVector::DotProduct(ViewDir, ToPoint), -1.f, 1.f))
+            );
+            AngleDeg = FMath::Min(AngleDeg, PointAngle);
+        }
+
+        // Außerhalb des Kegels, oder bereits ein näheres Ziel gefunden →
+        // teuren Sichtlinien-Trace sparen
+        if (AngleDeg > AimErrorMaxAngle || AngleDeg >= BestAngleDeg) continue;
+
+        if (!HasLineOfSightTo(Target, EyeLocation)) continue;
+
+        BestAngleDeg = AngleDeg;
+        bFoundTarget = true;
+    }
+
+    if (bFoundTarget)
+    {
+        AimAngularErrors.Add(BestAngleDeg);
+        AimErrorSampleCount++;
+        UE_LOG(LogTemp, Log, TEXT("[AimError] Player=%s | Winkelfehler=%.2f Grad | Stichproben=%d"),
+            *PlayerID, BestAngleDeg, AimErrorSampleCount);
+    }
+    else
+    {
+        UE_LOG(LogTemp, Verbose, TEXT("[AimError] Player=%s | kein sichtbares Ziel im %.0f-Grad-Kegel"),
+            *PlayerID, AimErrorMaxAngle);
+    }
+}
+
+void UTelemetryCollector::GetTargetAimPoints(const ACharacter* Target, TArray<FVector>& OutPoints) const
+{
+    if (!Target) return;
+
+    // Kapselmitte (Torso) — immer verfügbar
+    OutPoints.Add(Target->GetActorLocation());
+
+    // Kopfposition, falls das Skelett einen der bekannten Kopfknochen besitzt.
+    // Dieselbe Namensliste wie für die Headshot-Erkennung.
+    if (const USkeletalMeshComponent* Mesh = Target->GetMesh())
+    {
+        for (const FName& HeadBone : HeadshotBoneNames)
+        {
+            if (Mesh->GetBoneIndex(HeadBone) != INDEX_NONE)
+            {
+                OutPoints.Add(Mesh->GetBoneLocation(HeadBone));
+                break;
+            }
+        }
+    }
+}
+
+bool UTelemetryCollector::HasLineOfSightTo(const AActor* Target, const FVector& EyeLocation) const
+{
+    UWorld* World = GetWorld();
+    if (!World || !Target) return false;
+
+    FCollisionQueryParams Params;
+    Params.AddIgnoredActor(GetOwner());
+    Params.AddIgnoredActor(Target);
+
+    // Blockiert Level-Geometrie die Sicht zwischen Auge und Zielmittelpunkt?
+    FHitResult Blocker;
+    const bool bBlocked = World->LineTraceSingleByChannel(
+        Blocker,
+        EyeLocation,
+        Target->GetActorLocation(),
+        ECC_Visibility,
+        Params
+    );
+
+    return !bBlocked;
 }
 
 bool UTelemetryCollector::IsHeadshotBone(FName BoneName) const

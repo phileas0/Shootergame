@@ -1,0 +1,7 @@
+Verfahren,Schwelle,TP,FP,FN,TN,Precision,Recall,F1,Cost
+Regeln (Handkalibrierung),Risk >= 50 (Voreinstellung),12,19,16,249,0.3870967741935484,0.42857142857142855,0.4067796610169491,179
+Regeln (Handkalibrierung),Risk >= 35 (kostenoptimal),12,19,16,249,0.3870967741935484,0.42857142857142855,0.4067796610169491,179
+"ML (RF, OOF)",tau = 0.50 (Standard),11,1,17,267,0.9166666666666666,0.39285714285714285,0.55,171
+"ML (RF, OOF)",tau = 0.17 (kostenoptimal),21,21,7,247,0.5,0.75,0.6,91
+Regeln (datenbasiert kalibriert),"Mehrheitsentscheid, out-of-fold",17,22,11,246,0.4358974358974359,0.6071428571428571,0.5074626865671643,132
+Kombination Regeln ODER ML,"Regeln >= 0.9, tau >= 0.19",21,22,7,246,0.4883720930232558,0.75,0.5915492957746479,92

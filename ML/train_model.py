@@ -3,7 +3,8 @@ Schritt 3: ML-Modell Training
 Bachelorarbeit – Kostenasymmetrisches ML-Klassifikationsmodell zur Cheat-Erkennung
 
 Modelle:    Logistic Regression, Random Forest
-Features:   21 von 25 Spalten (AimAngularErrorMean, AimAngularErrorStdDev, HeadshotRate = 0 → ignoriert)
+Features:   siehe features.py (HeadshotRate ausgeschlossen, weil dauerhaft 0;
+            AimAngularError* sind seit der Mehrpunkt-Messung aktiv und werden genutzt)
 Klassen:    0 = legitimer Spieler, 1 = Cheater
 Imbalance:  ~95% / 5% → class_weight='balanced' + SMOTE optional
 Evaluation: Accuracy, Precision, Recall, F1, ROC-AUC, Cost-Matrix
@@ -17,13 +18,24 @@ Kosten-Annahme (nach Bachelorarbeit Kap. 2.3):
 """
 
 import os
+# Windows-Konsole nutzt standardmaessig cp1252 und bricht bei Zeichen wie
+# tau, lambda oder Pfeilen mit UnicodeEncodeError ab. UTF-8 erzwingen,
+# damit die mathematische Notation in der Ausgabe erhalten bleibt.
+import sys
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+import json
+import argparse
 import numpy as np
 import pandas as pd
 import matplotlib
 matplotlib.use('Agg')   # kein Display nötig (Headless)
 import matplotlib.pyplot as plt
 
-from sklearn.model_selection import train_test_split, StratifiedKFold, cross_val_score
+from sklearn.model_selection import (
+    train_test_split, StratifiedKFold, StratifiedGroupKFold,
+    cross_val_score, cross_val_predict
+)
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
@@ -39,8 +51,26 @@ import joblib
 # 0. Konfiguration
 # ─────────────────────────────────────────────
 SCRIPT_DIR   = os.path.dirname(os.path.abspath(__file__))
-DATA_PATH    = os.path.join(SCRIPT_DIR, "training_data.csv")
-OUTPUT_DIR   = os.path.join(SCRIPT_DIR, "results")
+
+# Datenquelle und Zielordner per Argument. Ohne Angabe bleibt es beim
+# synthetischen training_data.csv, damit der bisherige Lauf als
+# Vergleichspunkt reproduzierbar bleibt:
+#     python train_model.py
+#     python train_model.py training_data_real.csv --outdir results_real
+_parser = argparse.ArgumentParser(description="Cheat-Erkennung – Modelltraining")
+_parser.add_argument("data", nargs="?", default="training_data.csv",
+                     help="Trainingsdaten (Standard: training_data.csv)")
+_parser.add_argument("--outdir", default="results",
+                     help="Zielordner fuer Modelle und Auswertung "
+                          "(Standard: results). predict.py liest aus results/.")
+_args = _parser.parse_args()
+
+DATA_PATH = _args.data if os.path.isabs(_args.data) else os.path.join(SCRIPT_DIR, _args.data)
+if not os.path.exists(DATA_PATH):
+    print(f"[FEHLER] Datei nicht gefunden: {DATA_PATH}")
+    sys.exit(1)
+
+OUTPUT_DIR = _args.outdir if os.path.isabs(_args.outdir) else os.path.join(SCRIPT_DIR, _args.outdir)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # Kostenmatrix: C_FP < C_FN → wir bevorzugen False Negatives zu vermeiden
@@ -50,10 +80,21 @@ C_FN = 10   # Kosten: Cheater wird nicht erkannt
 RANDOM_STATE = 42
 TEST_SIZE    = 0.2   # 80/20 Split
 
-# Features die dauerhaft 0 sind → aus Training ausschließen
-ZERO_FEATURES = ["AimAngularErrorMean", "AimAngularErrorStdDev", "HeadshotRate"]
-# Nicht-Feature-Spalten
-META_COLS = ["PlayerID", "Label"]
+# Anzahl gemittelter Faltenaufteilungen im gruppierten Modus.
+#
+# Grund: bei acht Personen gibt es nur wenige Moeglichkeiten, die Gruppen auf
+# fuenf Falten zu verteilen, und das Ergebnis haengt spuerbar davon ab, welche
+# gewaehlt wird. Gemessen ueber 15 Aufteilungen schwankt die ROC-AUC zwischen
+# 0,696 und 0,844 — eine einzelne Zahl waere also Zufall der Seed-Wahl.
+# Gemittelt wird deshalb ueber mehrere Aufteilungen; berichtet wird der
+# Mittelwert samt Streuung.
+N_SEEDS = 10
+
+# Feature-Definition zentral aus features.py — siehe dort die Begründung,
+# warum Training und Inferenz dieselbe Quelle nutzen müssen.
+from features import (
+    ZERO_FEATURES, META_COLS, add_derived_features, get_feature_cols
+)
 
 
 # ─────────────────────────────────────────────
@@ -69,9 +110,9 @@ print(f"[Daten] Klassenverteilung:\n{df['Label'].value_counts().to_string()}")
 print(f"         → {(df['Label']==0).sum()} legitim (Label=0)")
 print(f"         → {(df['Label']==1).sum()} Cheater (Label=1)")
 
-# Feature-Spalten
-feature_cols = [c for c in df.columns
-                if c not in META_COLS and c not in ZERO_FEATURES]
+# Abgeleitete Features ergänzen (OnTargetRatio) und Feature-Spalten bestimmen
+df = add_derived_features(df)
+feature_cols = get_feature_cols(df)
 print(f"\n[Features] {len(feature_cols)} Features genutzt:")
 print("  " + ", ".join(feature_cols))
 print(f"\n[Ignoriert] {ZERO_FEATURES}  (dauerhaft 0 in echten UE5-Daten)")
@@ -79,11 +120,62 @@ print(f"\n[Ignoriert] {ZERO_FEATURES}  (dauerhaft 0 in echten UE5-Daten)")
 X = df[feature_cols].values
 y = df["Label"].values
 
-# Train/Test Split (stratifiziert → Klassenverteilung bleibt gleich)
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=TEST_SIZE, random_state=RANDOM_STATE, stratify=y
-)
-print(f"\n[Split] Train: {len(X_train)} | Test: {len(X_test)}")
+# ── Bewertungsverfahren wählen ────────────────────────────────────────
+#
+# Echte Daten (aus load_labeled_data.py) bringen eine Spalte Person mit.
+# Ist sie vorhanden, wird gruppiert kreuzvalidiert statt einmal zufällig
+# geteilt. Zwei Gründe:
+#
+#   1. Personenbezug. Dieselben acht Personen spielen in fast allen Runden
+#      mit. Ein zufälliger Split legt Runden derselben Person gleichzeitig
+#      in Trainings- UND Testmenge. Das Modell kann dann Spielstil
+#      wiedererkennen, statt Cheat-Verhalten zu lernen — die Kennzahlen
+#      fallen zu gut aus und halten im Einsatz gegen fremde Spieler nicht.
+#
+#   2. Größe der Testmenge. Bei 28 Cheater-Zeilen enthielte eine 20-%-Test-
+#      menge etwa sechs davon. Eine einzige Fehlklassifikation verschöbe den
+#      Recall um 17 Prozentpunkte — eine Zahl, die man nicht berichten kann.
+#
+# StratifiedGroupKFold hält alle Zeilen einer Person zusammen in derselben
+# Falte und die Klassenverteilung je Falte möglichst stabil. Jede Zeile
+# bekommt dadurch genau eine Vorhersage von einem Modell, das diese Person
+# nie gesehen hat (Out-of-Fold). Ausgewertet wird anschließend über alle
+# Zeilen statt über ein Fünftel.
+GROUPS   = None
+GROUP_BY = None
+
+if "Person" in df.columns and df["Person"].astype(str).str.strip().ne("").all():
+    GROUPS   = df["Person"].astype(str).values
+    GROUP_BY = "Person"
+
+if GROUPS is None:
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=TEST_SIZE, random_state=RANDOM_STATE, stratify=y
+    )
+    print(f"\n[Bewertung] Einzelner Train/Test-Split "
+          f"(Train: {len(X_train)} | Test: {len(X_test)})")
+    print(f"            Keine Spalte 'Person' vorhanden — keine Gruppierung "
+          f"moeglich.")
+    N_SPLITS = 5
+else:
+    # Nicht mehr Falten als Gruppen, die überhaupt Cheater enthalten —
+    # sonst entstehen Testfalten ohne eine einzige positive Zeile und der
+    # Recall ist dort undefiniert.
+    n_pos_groups = int(pd.Series(GROUPS)[y == 1].nunique())
+    N_SPLITS = max(2, min(5, n_pos_groups))
+
+    # Bewertet wird über alle Zeilen; ein separater Testsatz entfällt.
+    X_train, y_train = X, y
+    X_test,  y_test  = X, y
+
+    print(f"\n[Bewertung] Gruppierte Kreuzvalidierung ueber '{GROUP_BY}'")
+    print(f"            {len(np.unique(GROUPS))} Gruppen, davon "
+          f"{n_pos_groups} mit mindestens einer Cheater-Zeile")
+    print(f"            {N_SPLITS} Falten, Bewertung out-of-fold ueber alle "
+          f"{len(y)} Zeilen")
+    print(f"            Zeilen je Gruppe: " +
+          ", ".join(f"{g}={n}" for g, n in
+                    pd.Series(GROUPS).value_counts().items()))
 
 
 # ─────────────────────────────────────────────
@@ -142,6 +234,76 @@ def evaluate_thresholds(model_name, y_true, y_prob, thresholds=None):
     return df_res, float(best_row["tau"])
 
 
+def make_cv(seed=RANDOM_STATE):
+    """Passenden Kreuzvalidierer für den gewählten Bewertungsmodus."""
+    if GROUPS is None:
+        return StratifiedKFold(n_splits=N_SPLITS, shuffle=True,
+                               random_state=seed)
+    return StratifiedGroupKFold(n_splits=N_SPLITS, shuffle=True,
+                                random_state=seed)
+
+
+def fit_and_predict(pipeline, short_name):
+    """
+    Trainiert und liefert (cv_scores, y_prob).
+
+    Ohne Gruppierung: Kreuzvalidierung auf der Trainingsmenge zur Kontrolle,
+    danach ein Fit und Vorhersage auf der separaten Testmenge — das bisherige
+    Verfahren.
+
+    Mit Gruppierung: die Wahrscheinlichkeiten stammen aus der Kreuzvalidierung
+    selbst (out-of-fold). Jede Zeile wird von einem Modell bewertet, das die
+    zugehoerige Person nie gesehen hat. Anschliessend wird das Modell noch
+    einmal auf allen Daten gefittet — dieses Modell wird gespeichert und
+    spaeter von predict.py benutzt, bewertet wird es aber nie auf den eigenen
+    Trainingsdaten.
+    """
+    cv = make_cv()
+    fit_kwargs = {} if GROUPS is None else {"groups": GROUPS}
+
+    cv_scores = cross_val_score(pipeline, X_train, y_train, cv=cv,
+                                scoring="roc_auc", **fit_kwargs)
+
+
+    # Enthält eine Falte nur eine Klasse, ist ROC-AUC dort undefiniert und
+    # sklearn liefert NaN. Bei acht Gruppen, von denen eine gar keine
+    # Cheater-Zeile hat, ist das nicht zu vermeiden. Der Mittelwert wird
+    # deshalb über die gültigen Falten gebildet und der Ausfall benannt —
+    # die berichtete Kennzahl stammt ohnehin aus den Out-of-Fold-Vorhersagen
+    # über alle Zeilen, nicht aus diesem Mittelwert.
+    n_nan = int(np.isnan(cv_scores).sum())
+    print(f"\n[{short_name}] {N_SPLITS}-Fold CV ROC-AUC: "
+          f"{np.nanmean(cv_scores):.4f} ± {np.nanstd(cv_scores):.4f}")
+    print(f"     Scores: {np.round(cv_scores, 4)}")
+    if n_nan:
+        print(f"     {n_nan} Falte(n) ohne Cheater-Zeile — dort ist ROC-AUC "
+              f"undefiniert und geht nicht in den Mittelwert ein.")
+
+    if GROUPS is None:
+        pipeline.fit(X_train, y_train)
+        y_prob = pipeline.predict_proba(X_test)[:, 1]
+    else:
+        # Ueber mehrere Faltenaufteilungen mitteln — siehe N_SEEDS oben.
+        # Die Einzelwerte werden mitberichtet, damit die Streuung sichtbar
+        # bleibt und nicht als Scheingenauigkeit verschwindet.
+        probs, aucs = [], []
+        for seed in range(N_SEEDS):
+            p = cross_val_predict(pipeline, X, y, cv=make_cv(seed),
+                                  groups=GROUPS, method="predict_proba")[:, 1]
+            probs.append(p)
+            aucs.append(roc_auc_score(y, p))
+
+        y_prob = np.mean(probs, axis=0)
+        print(f"     Out-of-fold ueber {N_SEEDS} Faltenaufteilungen: "
+              f"ROC-AUC {np.mean(aucs):.4f} ± {np.std(aucs):.4f} "
+              f"(Spanne {min(aucs):.4f}–{max(aucs):.4f})")
+        print(f"     Berichtet wird die gemittelte Vorhersage.")
+
+        pipeline.fit(X, y)
+
+    return cv_scores, y_prob
+
+
 def print_evaluation(model_name, y_true, y_pred, y_prob):
     """Vollständige Modell-Evaluation inkl. Kosten"""
     print(f"\n{'─'*50}")
@@ -177,15 +339,8 @@ lr_pipeline = Pipeline([
     ))
 ])
 
-# Cross-Validation (5-fold, stratifiziert)
-cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
-cv_scores = cross_val_score(lr_pipeline, X_train, y_train, cv=cv, scoring="roc_auc")
-print(f"\n[LR] 5-Fold CV ROC-AUC: {cv_scores.mean():.4f} ± {cv_scores.std():.4f}")
-print(f"     Scores: {np.round(cv_scores, 4)}")
-
-lr_pipeline.fit(X_train, y_train)
-lr_prob  = lr_pipeline.predict_proba(X_test)[:, 1]
-lr_pred  = lr_pipeline.predict(X_test)
+cv_scores, lr_prob = fit_and_predict(lr_pipeline, "LR")
+lr_pred = (lr_prob >= 0.5).astype(int)
 
 lr_roc, lr_ap, lr_cost = print_evaluation("Logistic Regression", y_test, lr_pred, lr_prob)
 lr_threshold_df, lr_best_tau = evaluate_thresholds("Logistic Regression", y_test, lr_prob)
@@ -215,13 +370,8 @@ rf_pipeline = Pipeline([
     ))
 ])
 
-cv_scores_rf = cross_val_score(rf_pipeline, X_train, y_train, cv=cv, scoring="roc_auc")
-print(f"\n[RF] 5-Fold CV ROC-AUC: {cv_scores_rf.mean():.4f} ± {cv_scores_rf.std():.4f}")
-print(f"     Scores: {np.round(cv_scores_rf, 4)}")
-
-rf_pipeline.fit(X_train, y_train)
-rf_prob  = rf_pipeline.predict_proba(X_test)[:, 1]
-rf_pred  = rf_pipeline.predict(X_test)
+cv_scores_rf, rf_prob = fit_and_predict(rf_pipeline, "RF")
+rf_pred = (rf_prob >= 0.5).astype(int)
 
 rf_roc, rf_ap, rf_cost = print_evaluation("Random Forest", y_test, rf_pred, rf_prob)
 rf_threshold_df, rf_best_tau = evaluate_thresholds("Random Forest", y_test, rf_prob)
@@ -246,6 +396,96 @@ importances.reset_index().rename(
     columns={"index": "Feature", 0: "Importance"}
 ).to_csv(fi_path, index=False)
 print(f"→ Gespeichert: {fi_path}")
+
+
+# ─────────────────────────────────────────────
+# 5b. Recall je Cheat-Art
+#     Nur mit echten Daten möglich (Spalte CheatType aus load_labeled_data.py)
+# ─────────────────────────────────────────────
+# GROUPS-Bedingung ist nötig, nicht kosmetisch: nur im gruppierten Modus
+# liegt für JEDE Zeile von df eine Out-of-Fold-Vorhersage vor. Beim
+# einzelnen Split gilt rf_prob nur für die Testmenge und liesse sich nicht
+# zeilenweise auf df beziehen.
+if "CheatType" in df.columns and GROUPS is not None:
+    print("\n" + "=" * 60)
+    print("  Recall je Cheat-Art (Random Forest, τ = "
+          f"{rf_best_tau:.2f})")
+    print("=" * 60)
+
+    cheat_series = df["CheatType"].fillna("").astype(str)
+    rf_pred_opt_all = (rf_prob >= rf_best_tau).astype(int)
+
+    all_cheats = sorted({t.strip()
+                         for entry in cheat_series if entry.strip()
+                         for t in entry.split("+") if t.strip()})
+
+    rows = []
+    for cheat in all_cheats:
+        # "beteiligt": Cheat war aktiv, evtl. zusammen mit anderen
+        involved = cheat_series.apply(
+            lambda e: cheat in [t.strip() for t in e.split("+")]
+        ).values
+        # "sortenrein": genau dieser eine Cheat und sonst nichts
+        alone = (cheat_series.str.strip() == cheat).values
+
+        def recall_of(mask):
+            n = int(mask.sum())
+            if n == 0:
+                return n, None
+            return n, float(rf_pred_opt_all[mask].sum()) / n
+
+        n_inv, rec_inv = recall_of(involved)
+        n_alo, rec_alo = recall_of(alone)
+
+        rows.append({
+            "Cheat":            cheat,
+            "n_beteiligt":      n_inv,
+            "Recall_beteiligt": round(rec_inv, 4) if rec_inv is not None else None,
+            "n_sortenrein":     n_alo,
+            "Recall_sortenrein": round(rec_alo, 4) if rec_alo is not None else None,
+        })
+
+    df_cheat = pd.DataFrame(rows)
+
+    print(f"\n  {'Cheat':<14}{'n':>5}{'Recall':>9}   |{'n rein':>8}{'Recall':>9}")
+    print("  " + "-" * 52)
+    for r in df_cheat.itertuples():
+        rec_i = f"{r.Recall_beteiligt*100:6.1f} %" if r.Recall_beteiligt is not None else "     – "
+        rec_a = f"{r.Recall_sortenrein*100:6.1f} %" if r.Recall_sortenrein is not None else "     – "
+        print(f"  {r.Cheat:<14}{r.n_beteiligt:>5}{rec_i:>9}   |"
+              f"{r.n_sortenrein:>8}{rec_a:>9}")
+
+    print("\n  'beteiligt'  = Cheat war aktiv, evtl. gemeinsam mit anderen.")
+    print("  'sortenrein' = ausschliesslich dieser Cheat war aktiv.")
+    print("\n  Nur die rechte Spalte erlaubt eine Aussage darueber, ob DIESER")
+    print("  Cheat erkannt wird. Links kann die Erkennung von einem gleich-")
+    print("  zeitig aktiven anderen Cheat stammen — der Wert ist dann zu hoch.")
+
+    cheat_path = os.path.join(OUTPUT_DIR, "recall_per_cheat.csv")
+    df_cheat.to_csv(cheat_path, index=False)
+    print(f"\n→ Gespeichert: {cheat_path}")
+
+
+# ─────────────────────────────────────────────
+# 5c. Vorhersagen je Zeile sichern
+#     Grundlage für den Vergleich mit dem regelbasierten Detektor
+# ─────────────────────────────────────────────
+if GROUPS is not None:
+    # Nur im gruppierten Modus liegt für jede Zeile eine Out-of-Fold-
+    # Vorhersage vor. Sie ist die einzige, die man dem Regeldetektor
+    # gegenüberstellen darf: beide Verfahren haben die Zeile dann nicht
+    # zur Entscheidungsfindung benutzt.
+    pred_cols = [c for c in ["SessionFile", "PlayerID", "Person", "Label", "CheatType"]
+                 if c in df.columns]
+    df_pred = df[pred_cols].copy()
+    df_pred["RF_Probability"] = rf_prob
+    df_pred["LR_Probability"] = lr_prob
+    df_pred["RF_Label"] = (rf_prob >= rf_best_tau).astype(int)
+    df_pred["LR_Label"] = (lr_prob >= lr_best_tau).astype(int)
+
+    pred_path = os.path.join(OUTPUT_DIR, "oof_predictions.csv")
+    df_pred.to_csv(pred_path, index=False)
+    print(f"\n[Vorhersagen] Out-of-Fold je Zeile gespeichert: {pred_path}")
 
 
 # ─────────────────────────────────────────────
@@ -321,9 +561,20 @@ lr_model_path = os.path.join(OUTPUT_DIR, "model_lr.pkl")
 rf_model_path = os.path.join(OUTPUT_DIR, "model_rf.pkl")
 joblib.dump(lr_pipeline, lr_model_path)
 joblib.dump(rf_pipeline, rf_model_path)
+
+# Feature-Namen mitspeichern. sklearn-Pipelines arbeiten positionsbasiert und
+# kennen die Spaltennamen nicht — ohne diese Datei kann predict.py nicht
+# prüfen, ob die Daten zum Modell passen, und eine geänderte CSV-Struktur
+# würde entweder als kryptischer Dimensionsfehler oder als stille
+# Fehlzuordnung der Werte enden.
+feature_path = os.path.join(OUTPUT_DIR, "feature_columns.json")
+with open(feature_path, "w", encoding="utf-8") as f:
+    json.dump(feature_cols, f, indent=2)
+
 print(f"\n[Modelle] Gespeichert:")
 print(f"  {lr_model_path}")
 print(f"  {rf_model_path}")
+print(f"  {feature_path}")
 
 
 # ─────────────────────────────────────────────
@@ -334,8 +585,8 @@ print("  ZUSAMMENFASSUNG")
 print("=" * 60)
 summary = {
     "Modell":            ["Logistic Regression", "Random Forest"],
-    "CV ROC-AUC":        [f"{cv_scores.mean():.4f} ±{cv_scores.std():.4f}",
-                          f"{cv_scores_rf.mean():.4f} ±{cv_scores_rf.std():.4f}"],
+    "CV ROC-AUC":        [f"{np.nanmean(cv_scores):.4f} ±{np.nanstd(cv_scores):.4f}",
+                          f"{np.nanmean(cv_scores_rf):.4f} ±{np.nanstd(cv_scores_rf):.4f}"],
     "Test ROC-AUC":      [f"{lr_roc:.4f}", f"{rf_roc:.4f}"],
     "Avg. Precision":    [f"{lr_ap:.4f}", f"{rf_ap:.4f}"],
     "Opt. Threshold τ":  [f"{lr_best_tau:.1f}", f"{rf_best_tau:.1f}"],

@@ -22,6 +22,12 @@ Hinweis zu scikit-learn Notation:
 """
 
 import os
+# Windows-Konsole nutzt standardmaessig cp1252 und bricht bei Zeichen wie
+# tau, lambda oder Pfeilen mit UnicodeEncodeError ab. UTF-8 erzwingen,
+# damit die mathematische Notation in der Ausgabe erhalten bleibt.
+import sys
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -51,8 +57,9 @@ C_FN         = 10
 RANDOM_STATE = 42
 TEST_SIZE    = 0.2
 
-ZERO_FEATURES = ["AimAngularErrorMean", "AimAngularErrorStdDev", "HeadshotRate"]
-META_COLS     = ["PlayerID", "Label"]
+from features import (
+    ZERO_FEATURES, META_COLS, add_derived_features, get_feature_cols
+)
 
 # λ-Werte die getestet werden (als C = 1/λ in sklearn)
 # Bereich: sehr schwache bis sehr starke Regularisierung
@@ -68,7 +75,8 @@ print("=" * 60)
 # 1. Daten laden
 # ─────────────────────────────────────────────
 df = pd.read_csv(DATA_PATH)
-feature_cols = [c for c in df.columns if c not in META_COLS and c not in ZERO_FEATURES]
+df = add_derived_features(df)
+feature_cols = get_feature_cols(df)
 X = df[feature_cols].values
 y = df["Label"].values
 

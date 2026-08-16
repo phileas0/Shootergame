@@ -1,0 +1,19 @@
+{
+  "regeln_gesamt_s": 0.072,
+  "regeln_je_session_ms": 1.0,
+  "regeln_je_zeile_ms": 0.2279,
+  "regeln_logik_je_zeile_ms": 0.0306,
+  "ml_inferenz_1thread_je_session_ms": 3.529,
+  "ml_stapel_zeilen": 59724,
+  "ml_stapel_1thread_ms": 110.6,
+  "ml_stapel_parallel_ms": 49.5,
+  "ml_laden_ms": 20.12,
+  "ml_inferenz_je_zeile_ms": 0.0796,
+  "ml_inferenz_je_session_ms": 23.934,
+  "ml_speicher_mb": 0.48,
+  "ml_modellgroesse_kb": 551.5,
+  "ml_training_s": 0.14,
+  "_system": "AMD64 Family 25 Model 97 Stepping 2, AuthenticAMD",
+  "_sessions": 72,
+  "_zeilen": 316
+}

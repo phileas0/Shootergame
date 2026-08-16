@@ -1,0 +1,13 @@
+Modell,C_FN/C_FP,C_FP,C_FN,τ*,Min. Kosten
+Logistic Regression,1,1,1,0.65,14
+Random Forest,1,1,1,0.25,12
+Logistic Regression,2,1,2,0.65,26
+Random Forest,2,1,2,0.25,21
+Logistic Regression,5,1,5,0.5,60
+Random Forest,5,1,5,0.25,48
+Logistic Regression,10,1,10,0.5,115
+Random Forest,10,1,10,0.17,91
+Logistic Regression,20,1,20,0.26,221
+Random Forest,20,1,20,0.17,161
+Logistic Regression,50,1,50,0.01,320
+Random Forest,50,1,50,0.01,305
